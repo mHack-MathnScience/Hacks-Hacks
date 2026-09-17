@@ -41,6 +41,15 @@ function Hub() {
 
   return (
     <AppShell>
+      <section className="mb-6 overflow-hidden rounded-xl border border-line bg-forest shadow-[var(--shadow-card)]">
+        <img
+          src="/og.jpg"
+          alt="Hack’s Hacks wombat at a classroom math and science station"
+          width={1200}
+          height={630}
+          className="block h-auto w-full"
+        />
+      </section>
       <section className="mb-8 grid gap-6 md:grid-cols-[1.4fr_0.8fr] md:items-end">
         <div>
           <p className="mb-2 text-xs font-medium tracking-[0.18em] text-forest uppercase">Grade 5 · Texas TEKS</p>
