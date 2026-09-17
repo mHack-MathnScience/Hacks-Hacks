@@ -1,0 +1,7 @@
+[build]
+  command = "node scripts/with-app-env.mjs vite build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_AUTH_ENABLED = "false"

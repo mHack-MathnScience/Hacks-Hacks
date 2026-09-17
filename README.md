@@ -10,22 +10,10 @@ Progress is saved on the device (no student accounts).
 
 **Science Hacks** — 16 labs (forces, landforms, circuits, rocks), a CER notebook, a 21-item Check-it quiz, teacher lesson paths, and STAAR-style review. Science TEKS follow the 2024 Grade 5 science standards (19 TAC §112.16).
 
-## Run it
+## Live classroom site
 
-Needs [Node.js 22+](https://nodejs.org/).
-
-```bash
-npm install
-npm run dev
-```
-
-Then open the address printed in the terminal (the app listens on port 8080).
-
-```bash
-npm run build      # production build
-npm run typecheck  # TypeScript check
-```
+Share a published `grok.me` link, or import this repo into [Netlify](https://app.netlify.com) (sign up with GitHub → **Add new site** → **Import from Git** → `Hacks-Hacks`). Students get a `something.netlify.app` address. Visitors can practice; they cannot edit the project.
 
 ## Repo
 
-Source for [Hack’s Hacks](https://github.com/michaelhackmath/MathandScience). Built for classroom use; remix and share as you like.
+Source: [mHack-MathnScience/Hacks-Hacks](https://github.com/mHack-MathnScience/Hacks-Hacks)
