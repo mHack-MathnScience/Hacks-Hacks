@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/practice/5.3D",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Fifth Station",
+      "hasCanvas": false,
+      "bodyTextLen": 322,
+      "bodyTextHash": "141b6fbe204a897ac933508dc7fce33bc2ae5e96d7c131680b8bf2c091128472",
+      "bodyTextPrefix": "Fifth Station Operations 1 / 8 5.3(D) Model decimal multiplicati",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/practice-grid-smoke.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Fifth Station",
+      "hasCanvas": false,
+      "bodyTextLen": 288,
+      "bodyTextHash": "a7eec452ca01c803fa46b20a71c1d70aaa67302b5c83c800808e6328fe75a8a9",
+      "bodyTextPrefix": "Fifth Station Operations 1 / 8 5.3(D) Model decimal multiplicati",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/practice-grid-smoke-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/practice-grid-smoke.json"
+}

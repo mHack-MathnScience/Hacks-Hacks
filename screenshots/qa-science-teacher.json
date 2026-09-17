@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/science/teacher",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 7035,
+      "bodyTextHash": "8d2ca0d4f8fcb285b29c16e3122ae0540f6db82b99e088f50cbb71b6c63db7ef",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-teacher.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 7008,
+      "bodyTextHash": "64c1e84560acabe8a6b57b388d8391c3c9437baaf5c01a5f29f21182f7baf364",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks FOR TEACHERS Scienc",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-teacher-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-science-teacher.json"
+}

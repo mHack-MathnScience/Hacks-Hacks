@@ -1,0 +1,1 @@
+import{c as e}from"./useStore-DkUXc2QZ.js";import{u as t}from"./index-DdA8E2zj.js";var n=e();function r(){return(0,n.jsx)(t,{})}export{r as component};

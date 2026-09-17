@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/science/lab/equal",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 724,
+      "bodyTextHash": "d8d7a60e891badfaaf471912191a78130c441b3d5010dfd4d2739383af413521",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-equal.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 697,
+      "bodyTextHash": "e516cd74989188b851bbff0efb41524f1306082482c062e27a43cf1d4135e525",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Forces labs PATTERN",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-equal-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-science-equal.json"
+}

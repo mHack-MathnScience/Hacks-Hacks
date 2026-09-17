@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/science/quiz",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 431,
+      "bodyTextHash": "148eb137ebccf2def0ecbcf6f42bc1985a95e8293adc1789675d062c939b7847",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-quiz.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 404,
+      "bodyTextHash": "7a75e4a09438c022d2f4d76d9f5d52c51f0c5b22f5ed4187da77517ea2a06a0e",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks CHECK IT · STAAR-ST",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-quiz-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-science-quiz.json"
+}

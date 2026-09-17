@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/practice/5.8B",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Fifth Station",
+      "hasCanvas": false,
+      "bodyTextLen": 400,
+      "bodyTextHash": "7733ef1484cc801e226966dfe5a036d4f021ec1562de75bc982adc7c665880eb",
+      "bodyTextPrefix": "Fifth Station Coordinate Plane 1 / 8 5.8(B) How to graph ordered",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/practice-coord-smoke.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Fifth Station",
+      "hasCanvas": false,
+      "bodyTextLen": 419,
+      "bodyTextHash": "667684c906598b499d16c78146d68fad69af592594f1de8d51544dcc7ba414b5",
+      "bodyTextPrefix": "Fifth Station Coordinate Plane 1 / 8 5.8(B) How to graph ordered",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/practice-coord-smoke-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/practice-coord-smoke.json"
+}

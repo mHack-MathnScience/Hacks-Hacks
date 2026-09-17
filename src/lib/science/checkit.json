@@ -1,0 +1,275 @@
+[
+  {
+    "id": "q1",
+    "prompt": "Two students push a crate from opposite sides with equal force. The crate is sitting still. What happens?",
+    "teks": "5.7A",
+    "choices": [
+      "The crate speeds up toward the stronger student.",
+      "The crate does not change its motion. It stays still.",
+      "The crate floats because the forces cancel gravity.",
+      "The crate always moves to the right."
+    ],
+    "answer": 1,
+    "why": "Equal forces in opposite directions are balanced. They do not change the crate's motion, so a crate at rest stays at rest."
+  },
+  {
+    "id": "q2",
+    "prompt": "A student pushes a box to the right with 8 units of force. Friction pushes left with 3 units. What best describes the forces?",
+    "teks": "5.7A",
+    "choices": [
+      "Equal forces \u2014 the box will not move.",
+      "Unequal forces \u2014 the box speeds up to the right.",
+      "Unequal forces \u2014 the box speeds up to the left.",
+      "No forces are acting on the box."
+    ],
+    "answer": 1,
+    "why": "8 is greater than 3, so the forces are unequal. The box changes its motion in the direction of the larger force (right)."
+  },
+  {
+    "id": "q3",
+    "prompt": "A toy car rolls much farther on ice than on carpet. Which force is different?",
+    "teks": "4.7A / 5.7B",
+    "choices": [
+      "Gravity is stronger on carpet.",
+      "Magnetism pulls the car backward on carpet.",
+      "Friction is greater on carpet, so it slows the car sooner.",
+      "The car has more mass on ice."
+    ],
+    "answer": 2,
+    "why": "Friction opposes motion. Rough surfaces like carpet have more friction than ice, so the car loses energy of motion faster."
+  },
+  {
+    "id": "q4",
+    "prompt": "Which force can act on an object without touching it?",
+    "teks": "3.7A",
+    "choices": [
+      "Friction between a shoe and the floor",
+      "A student pushing a swing",
+      "Gravity pulling a dropped ball toward Earth",
+      "Air pushing out of a balloon (only while it is touching the air inside)"
+    ],
+    "answer": 2,
+    "why": "Gravity (and magnetism) can act at a distance. Friction and most pushes need contact."
+  },
+  {
+    "id": "q5",
+    "prompt": "A student wants to test how ramp height affects how far a car travels. Which plan is a fair test?",
+    "teks": "5.7B",
+    "choices": [
+      "Change the height, the car's mass, and the floor surface every trial.",
+      "Change only the ramp height. Keep the same car, same mass, and same floor.",
+      "Use a different car for each height so the test is more interesting.",
+      "Measure the color of the car instead of the distance."
+    ],
+    "answer": 1,
+    "why": "A fair test changes only the independent variable (ramp height) and measures the dependent variable (distance). Everything else stays the same."
+  },
+  {
+    "id": "q6",
+    "prompt": "Air rushes out the back of a balloon rocket. The rocket moves forward. Why?",
+    "teks": "5.7A / 5.7B",
+    "choices": [
+      "Equal forces keep the balloon still, then gravity pulls it forward.",
+      "The force of the air going backward is not balanced, so the balloon changes its motion forward.",
+      "Friction on the string pulls the balloon forward.",
+      "The string's magnetism pushes the balloon."
+    ],
+    "answer": 1,
+    "why": "The push of escaping air is an unequal force in the system. The balloon transfers energy and moves the other way along the string."
+  },
+  {
+    "id": "q7",
+    "prompt": "A magnet holds a paper clip without touching it. This shows that magnetism is \u2014",
+    "teks": "3.7A / 4.7A",
+    "choices": [
+      "a contact force like friction",
+      "the same as gravity, because both only push",
+      "a force that can act at a distance",
+      "not a force, because the objects do not touch"
+    ],
+    "answer": 2,
+    "why": "Magnetism can attract or repel without contact. Gravity also acts at a distance, but gravity only pulls."
+  },
+  {
+    "id": "q8",
+    "prompt": "As a crate speeds up, a student notices the energy-of-motion bar grows. What is happening?",
+    "teks": "5.7A",
+    "choices": [
+      "Energy is being transferred to the crate as unequal forces change its motion.",
+      "Energy is destroyed when the crate moves.",
+      "Equal forces create energy from nothing.",
+      "Friction is adding energy of motion."
+    ],
+    "answer": 0,
+    "why": "Unequal forces that move an object transfer energy. The moving crate has more energy of motion. Friction usually takes energy away."
+  },
+  {
+    "id": "q9",
+    "prompt": "A deep V-shaped canyon with a river at the bottom was most likely formed by \u2014",
+    "teks": "5.10C",
+    "choices": [
+      "wind piling up sand",
+      "running water eroding rock over a long time",
+      "a glacier melting in one day",
+      "sediment dropping where a river meets the ocean"
+    ],
+    "answer": 1,
+    "why": "Canyons are usually cut by water. The river erodes rock and carries sediment away, carving a V-shaped valley that can become a canyon."
+  },
+  {
+    "id": "q10",
+    "prompt": "A U-shaped valley is evidence that which agent once changed the land?",
+    "teks": "5.10C",
+    "choices": [
+      "Wind depositing sand",
+      "Only a flood that lasted one afternoon",
+      "Ice \u2014 a glacier scraped the valley, even if the ice is gone now",
+      "A river dropping sediment into the ocean"
+    ],
+    "answer": 2,
+    "why": "Glaciers (ice) carve U-shaped valleys. The ice may no longer be there. The landform is the evidence."
+  },
+  {
+    "id": "q11",
+    "prompt": "A river slows down where it meets the Gulf of Mexico and drops mud and sand. What landform is building?",
+    "teks": "5.10C",
+    "choices": [
+      "A canyon",
+      "A sand dune",
+      "A U-shaped valley",
+      "A delta"
+    ],
+    "answer": 3,
+    "why": "A delta forms by deposition. When water slows, it cannot carry as much sediment, so the sediment drops and builds new land, often in a triangle."
+  },
+  {
+    "id": "q12",
+    "prompt": "Monahans Sandhills in West Texas are hills of sand that slowly creep. What builds them?",
+    "teks": "5.10C",
+    "choices": [
+      "Wind picking up sand and depositing it on a slip face",
+      "A glacier scraping a U",
+      "A river cutting a V through rock",
+      "Equal forces on a crate"
+    ],
+    "answer": 0,
+    "why": "Wind erodes sand from the gentle windward slope and deposits it on the steep slip face. That is how dunes form and migrate."
+  },
+  {
+    "id": "q13",
+    "prompt": "A bulb, a battery, and wires are connected, but the bulb is dark. The switch is open. Why?",
+    "teks": "5.8B",
+    "choices": [
+      "The battery has no chemical energy left, always.",
+      "The path is not complete, so electrical energy cannot reach the load.",
+      "Bulbs only work in space.",
+      "Open switches add extra electrical energy."
+    ],
+    "answer": 1,
+    "why": "A functioning circuit needs a closed path. An open switch breaks the path, so the load does not receive electrical energy."
+  },
+  {
+    "id": "q14",
+    "prompt": "Electrical energy in a complete circuit turns a fan. That energy was transformed into \u2014",
+    "teks": "5.8B",
+    "choices": [
+      "only chemical energy",
+      "energy of motion",
+      "a new kind of magnet that needs a touch",
+      "weathering"
+    ],
+    "answer": 1,
+    "why": "A motor or fan changes electrical energy into energy of motion. Other loads can make light, sound, or thermal energy."
+  },
+  {
+    "id": "q15",
+    "prompt": "A student puts a rubber band in a gap in a circuit. The bulb stays dark. The rubber band is \u2014",
+    "teks": "5.6A / 5.8B",
+    "choices": [
+      "a conductor",
+      "a source of chemical energy",
+      "an insulator that blocks the path",
+      "a load that makes sound"
+    ],
+    "answer": 2,
+    "why": "Insulators such as rubber, wood, and plastic do not let electrical energy pass. The path stays incomplete."
+  },
+  {
+    "id": "q16",
+    "prompt": "In a flashlight, energy changes from chemical energy in the battery to electrical energy to light. This is an example of \u2014",
+    "teks": "5.8A",
+    "choices": [
+      "energy transformation in a system",
+      "equal forces canceling",
+      "a U-shaped valley",
+      "an insulator becoming a conductor"
+    ],
+    "answer": 0,
+    "why": "5.8A: energy in a flashlight battery changes from chemical energy to electrical energy to light energy."
+  },
+  {
+    "id": "q17",
+    "prompt": "A student has a battery, a light, and wires, but the light stays off. The wires do not touch the light. What is missing?",
+    "teks": "5.8B",
+    "choices": [
+      "The parts are not connected into one closed path",
+      "The light needs gravity to turn on",
+      "Batteries only work on ramps",
+      "A canyon must be in the circuit"
+    ],
+    "answer": 0,
+    "why": "A functioning circuit needs a source, a load, and a closed path of conductors. The parts have to go together."
+  },
+  {
+    "id": "q18",
+    "prompt": "A cliff cracks and pebbles fall, but they stay in a pile at the bottom. Which process is this?",
+    "teks": "5.10B",
+    "choices": [
+      "Erosion, because the pebbles moved far away",
+      "Weathering, because the rock broke into bits that stayed in place",
+      "Cementation, because minerals glued the cliff",
+      "A delta forming in the ocean"
+    ],
+    "answer": 1,
+    "why": "Weathering breaks rock into sediment. Erosion is the next step \u2014 moving those bits to a new place."
+  },
+  {
+    "id": "q19",
+    "prompt": "Which list shows the processes that form sedimentary rock in the correct order?",
+    "teks": "5.10B",
+    "choices": [
+      "Cementation, compaction, deposition, erosion, weathering",
+      "Weathering, erosion, deposition, compaction, cementation",
+      "Erosion, cementation, weathering, deposition, compaction",
+      "Deposition, weathering, compaction, erosion, cementation"
+    ],
+    "answer": 1,
+    "why": "Break the rock (weathering), move it (erosion), drop it in layers (deposition), squeeze it (compaction), then glue it (cementation)."
+  },
+  {
+    "id": "q20",
+    "prompt": "Minerals seep between grains of sand and harden the layer into sandstone. This process is \u2014",
+    "teks": "5.10B",
+    "choices": [
+      "weathering",
+      "erosion",
+      "cementation",
+      "a U-shaped valley"
+    ],
+    "answer": 2,
+    "why": "Cementation is the glue. Compaction squeezes; cementation binds the grains into sedimentary rock."
+  },
+  {
+    "id": "q21",
+    "prompt": "Coal, oil, and natural gas are found in sedimentary rock because \u2014",
+    "teks": "5.10B",
+    "choices": [
+      "magnets pulled them into the layers",
+      "they fell from space last year",
+      "remains of living things were buried in sediment and changed by heat and pressure over a long time",
+      "weathering glues sand into oil"
+    ],
+    "answer": 2,
+    "why": "Fossil fuels form when plants and other organisms are buried in sediment. Compaction, heat, and time change the remains. That is why they are found in sedimentary rock layers."
+  }
+]

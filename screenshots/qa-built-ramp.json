@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8081/science/lab/ramp",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 791,
+      "bodyTextHash": "dd7b12abbe39112be22b3678aaf2232a2a830ce9570e4fb3c6abe823e57bcdf9",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-ramp.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 764,
+      "bodyTextHash": "e353c7c77550b51512a5ad2cc28ebf23bb6fbdac7b191ccd1b4a7d12d6748796",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Forces labs DESIGN ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-ramp-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-built-ramp.json"
+}

@@ -1,0 +1,1 @@
+import{c as e}from"./useStore-DkUXc2QZ.js";import{t}from"./subject-home-CV1waT1s.js";var n=e();function r(){return(0,n.jsx)(t,{subject:`math`})}export{r as component};

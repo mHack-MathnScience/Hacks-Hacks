@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 654,
+      "bodyTextHash": "3b1657727e24775e76c2acfb67b58aef0357b5576573ce7142484499ee8179c7",
+      "bodyTextPrefix": "Hack’s Hacks GRADE 5 · TEXAS TEKS Hack’s Hacks Math Hacks is gen",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 654,
+      "bodyTextHash": "3b1657727e24775e76c2acfb67b58aef0357b5576573ce7142484499ee8179c7",
+      "bodyTextPrefix": "Hack’s Hacks GRADE 5 · TEXAS TEKS Hack’s Hacks Math Hacks is gen",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

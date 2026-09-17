@@ -1,0 +1,1 @@
+import{c as e}from"./useStore-DkUXc2QZ.js";import{t}from"./index-DdA8E2zj.js";import{t as n}from"./strand-board-CEe3GovQ.js";var r=e();function i(){let{strandId:e}=t.useParams();return(0,r.jsx)(n,{subject:`science`,strandId:e})}export{i as component};

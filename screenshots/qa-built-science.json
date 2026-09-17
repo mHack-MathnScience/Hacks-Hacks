@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8081/science",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 784,
+      "bodyTextHash": "ec52a101570bb9c77e5520e99cf583d4b2378d1302d0e72915734fa031aa44be",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-science.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 757,
+      "bodyTextHash": "9ada1ce809c9c5a1462f1b23bc621c190f8e9d738128d4f125ae7b116fb20104",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks SCIENCE HACKS · TEX",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-science-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-built-science.json"
+}

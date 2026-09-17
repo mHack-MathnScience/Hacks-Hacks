@@ -1,0 +1,1 @@
+import{c as e}from"./useStore-DkUXc2QZ.js";import{t}from"./science-shell-RCAWHWF_.js";import{t as n}from"./subject-home-CV1waT1s.js";var r=e();function i(){return(0,r.jsx)(t,{children:(0,r.jsx)(n,{subject:`science`,framed:!0})})}export{i as component};

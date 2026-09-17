@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8081/science/lab/build",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 857,
+      "bodyTextHash": "add1bd56894fd1ebd073f258939635475124911c27edf9ffda07606bdc736093",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-circuit.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 830,
+      "bodyTextHash": "f87fffe7fb6235ec47263b4e9f5c3978154caf2e4a4402df7290dcf02331b85e",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Circuits labs PARTS",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-built-circuit-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-built-circuit.json"
+}

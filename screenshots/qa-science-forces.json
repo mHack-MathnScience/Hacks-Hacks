@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/science/labs/forces",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 2104,
+      "bodyTextHash": "6bc4c58d6ccb4262b9c1aafe7ffb0cabcd8b2e64b487c8d74eb2315363a5a7eb",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks Notebook Check it T",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-forces.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Hack’s Hacks",
+      "hasCanvas": false,
+      "bodyTextLen": 2077,
+      "bodyTextHash": "65981517cbc2c69688ba2a853dcd83cbf4967f887a6695abde94f11b90f382f6",
+      "bodyTextPrefix": "Hack’s Hacks Forces Landforms Circuits Rocks TEKS 5.7 Force Equa",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/qa-science-forces-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/qa-science-forces.json"
+}

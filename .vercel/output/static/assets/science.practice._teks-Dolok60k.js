@@ -1,0 +1,1 @@
+import{c as e}from"./useStore-DkUXc2QZ.js";import{t}from"./practice-session-CfF3mZc4.js";import{n}from"./index-DdA8E2zj.js";var r=e();function i(){let{teks:e}=n.useParams();return(0,r.jsx)(t,{subject:`science`,teks:e})}export{i as component};
