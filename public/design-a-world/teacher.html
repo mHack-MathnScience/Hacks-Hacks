@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design a World: Teacher View</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  body { overflow: auto; } .t-wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+  .t-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; } .t-note { background: #fff8e1; border: 1px solid #ffe08a; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; }
+  table.class { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; } table.class th, table.class td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; } table.class th { background: #f4f8fb; position: sticky; top: 0; }
+  .ok { color: var(--green); font-weight: 700; } .bad { color: var(--red); font-weight: 700; } .t-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+  #t-report { margin-top: 14px; } .t-empty { color: var(--muted); padding: 20px; text-align: center; background: #fff; border-radius: 12px; }
+  @media (max-width: 900px) { .t-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><img src="icons/icon.svg" alt="" width="34" height="34"><div><b>Design a World</b><small>Teacher View</small></div></div><div style="flex:1"></div><a class="hbtn" href="index.html">Open the game</a></header>
+<div class="t-wrap">
+  <div class="t-grid">
+    <section class="card"><h3>Add student work</h3><p class="small">Paste one or more turn-in codes (one per line), or open save files (.json). You can select many files at once. Everything stays in this browser; nothing is uploaded.</p>
+      <textarea id="t-codes" rows="5" placeholder="DAW7.1a2b3c4d.N4Ig..."></textarea>
+      <div class="t-actions"><button class="btn primary" id="t-add">Check codes</button><label class="btn ghost file-btn">Open save files<input type="file" id="t-files" accept=".json,application/json,text/plain" multiple hidden></label><span id="t-msg" class="small" aria-live="polite"></span></div></section>
+    <section class="t-note"><b>About the check number.</b> Every code and save file carries a check number (a checksum) made from the student&rsquo;s work. If the work is changed by hand or damaged when copying, the check number will not match, and this page shows <span class="bad">&#10007; Changed</span>.<br><br><b>This is tamper-resistant, not secure.</b> It catches accidents and casual edits, but a determined person could make a new valid code. Use it with your normal classroom judgment.</section>
+  </div>
+  <div class="t-actions"><h3 style="margin:0;flex:1">Class list</h3><button class="btn ghost" id="t-csv">Download class CSV</button><button class="btn ghost" id="t-clear">Clear list</button></div>
+  <div id="t-table"></div>
+  <div id="t-report"></div>
+  <section class="card t-history" id="t-history"><h3>History events: teacher notes and preview</h3>
+    <p class="small">History events come from School Bot&rsquo;s <code>history_events.json</code>. Students meet them when their world is ready (for example, after the first town is built). Every choice is peaceful civic action; there is never an option to enslave, buy, or sell people, to profit from slavery, or to fight. War appears only as causes, perspectives, and costs, and imagery is symbolic. Each choice&rsquo;s text is checked by an automated scan when the content is imported and again in the game.</p>
+    <label class="cbx"><input type="checkbox" id="t-hist-off"> Turn history events <b>off</b> for students on this computer</label>
+    <p class="small">For other computers, share this link instead: <code id="t-hist-link"></code> (the game also has a History events switch in Settings).</p>
+    <div id="t-hist-rules"></div><div id="t-hist-list"></div></section>
+  <section class="card t-civ" id="t-civ"><h3>Civilizations (god game): grade pack</h3>
+    <p class="small">Students shape land, climate and biomes; settlements grow on their own where the geography supports them, and problems arrive that are tied to the social studies TEKS for the grade you pick. Students answer with a policy, by reshaping the land, or by writing a document, then watch the consequences unfold and look back. There are no scores: you see choices, writing and reflections. Every option is peaceful civic action; slavery appears only as a violation of human rights, and no one is hurt in any event.</p>
+    <label>Grade pack for students on this computer: <select id="t-grade"></select></label>
+    <p class="small">For other computers, share this link: <code id="t-grade-link"></code>. A world keeps the pack it started with.</p>
+    <h4>Challenge level</h4>
+    <p class="small"><b>Challenge</b> is the default (GT): a smaller starting budget and fewer world-shaping changes per era, competing needs, open-ended problems justified with claim, evidence and reasoning, "Show me" only after 2 tries or a written attempt, predictions, and consequence chains. <b>Support</b> gives a bigger budget and more changes, shorter writing minimums, and the original "Show me" timing. Neither mode is graded.</p>
+    <label>Challenge level for students on this computer: <select id="t-mode"><option value="challenge">Challenge (default)</option><option value="support">Support (easier)</option></select></label>
+    <p class="small">For one student on any computer, share: <code id="t-mode-link"></code>. The link only sets the level of a <b>new</b> world. Each world keeps its level once it is made, so students cannot switch by editing the link. Changing this setting updates worlds on this computer the next time they open, and the report notes the change.</p>
+    <div id="t-civ-list"></div></section>
+  <section class="card t-fun" id="t-fun"><h3>Fun features: teacher switches</h3>
+    <label class="cbx"><input type="checkbox" id="t-ev-off"> Turn random <b>nature surprises</b> (dry spell, flood, landslide, invasive plant, storm) <b>off</b> for students on this computer</label>
+    <p class="small">For other computers, share this link: <code id="t-ev-link"></code>. Nature surprises are gentle (no one is hurt), framed as a world need, and give no grade or TEKS credit. Students can also turn them off in Settings.</p>
+    <p class="small"><b>Sound</b> is off by default; students turn it on with the speaker button. <b>Reduced motion</b> is in Settings and follows the computer&rsquo;s reduce-motion setting. <b>Achievements</b> are play-only: they are never shown in this view, the Turn-in report, PDF, image, slideshow, or CSV.</p>
+    <p class="small"><b>Favorites rule:</b> each stage, students star 2 Field Guide entries (or fewer if they have fewer) and write a short explanation (12+ words) for each. Correct picks count as evidence; written explanations make it strong.</p></section>
+</div>
+<div id="print-area"></div>
+<script src="js/vendor/lz-string.min.js"></script>
+<script src="data/missions.js"></script>
+<script src="js/biomes.js"></script>
+<script src="js/state.js"></script>
+<script src="data/world.js"></script>
+<script src="js/world-core.js"></script>
+<script src="data/packs/index.js"></script>
+<script src="data/packs/g5.js"></script>
+<script src="js/civ-core.js"></script>
+<script src="js/nature-core.js"></script>
+<script src="js/challenge-core.js"></script>
+<script src="data/describe.js"></script>
+<script src="js/describe-core.js"></script>
+<script src="js/art-core.js"></script>
+<script src="js/art-items1.js"></script>
+<script src="js/art-items2.js"></script>
+<script src="js/art-items3.js"></script>
+<script src="js/art-landforms.js"></script>
+<script src="js/art-organisms.js"></script>
+<script src="js/art-organisms2.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/items.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/map.js"></script>
+<script src="data/fun.js"></script>
+<script src="js/fun-core.js"></script>
+<script src="js/report.js"></script>
+<script src="js/showcase.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = DAW_STATE, U = DAW_UI, R = DAW_REPORT, esc = U.esc, ix = S.index(window.DAW_DATA), rows = [];
+  DAW_ITEMS.init(ix);
+  function add(res, src) {
+    if (!res.save) { rows.push({ error: res.error || 'Could not read', src: src }); return; }
+    var sm = R.summary(res.save, ix), by = {}; sm.tracker.bySubject.forEach(function (b) { by[b.id] = b; });
+    var ev = window.DAW_SHOWCASE && DAW_SHOWCASE.stops().length ? DAW_SHOWCASE.evidence(res.save, ix).counts : null;
+    rows.push({ save: res.save, verified: !!res.verified, kind: res.kind, sm: sm, by: by, ev: ev, src: src }); // no score fields: old saves' XP/levels are simply not shown
+  }
+  function paint() {
+    var subj = S.SUBJECTS.filter(function (s) { return rows.some(function (r) { return r.by && r.by[s.id] && r.by[s.id].total; }); });
+    if (!rows.length) { U.$('#t-table').innerHTML = '<div class="t-empty">No student work yet. Paste codes or open save files above.</div>'; return; }
+    U.$('#t-table').innerHTML = '<div style="overflow:auto"><table class="class"><thead><tr><th>Student</th><th>Period</th><th>Check</th><th>Missions</th><th>Stage</th><th>TEKS with evidence</th>' + subj.map(function (s) { return '<th>' + esc(s.name) + '</th>'; }).join('') + '<th>Evidence statuses</th><th>Field Guide</th><th>Words</th><th>Needs review</th><th>Last saved</th><th></th></tr></thead><tbody>' + rows.map(function (r, k) {
+      if (r.error) return '<tr><td colspan="' + (11 + subj.length) + '" class="bad">' + esc(r.src) + ': ' + esc(r.error) + '</td><td><button class="btn small ghost" data-rm="' + k + '">Remove</button></td></tr>';
+      var s = r.save, st = r.sm.stages.filter(function (x) { return x.complete; }).length;
+      return '<tr><td><b>' + esc(s.student.name || '(no name)') + '</b><br><small class="small">' + esc(r.kind === 'file' ? 'save file' : 'code') + '</small></td><td>' + esc(s.student.period) + '</td><td>' + (r.verified ? '<span class="ok">&#10003; Verified</span>' : '<span class="bad">&#10007; Changed</span>') + '</td><td>' + r.sm.done + ' of ' + r.sm.total + ' finished</td><td>' + st + ' of ' + r.sm.stages.length + ' done</td><td>' + r.sm.tracker.done + ' of ' + r.sm.tracker.total + '</td>' + subj.map(function (x) { var b = r.by[x.id], c = S.subjectCounts(r.sm.tracker, x.id); return '<td>' + (b && b.total ? c.evidence + ' with evidence' + (c.notYet ? '<br><small class="small">' + c.notYet + ' not yet</small>' : '') : '&mdash;') + '</td>'; }).join('') + '<td class="t-ev">' + (r.ev ? '<span class="ev-st s-strong">' + r.ev.strong + ' strong</span> <span class="ev-st s-weak">' + r.ev.weak + ' weak</span> <span class="ev-st s-missing">' + r.ev.missing + ' missing</span>' : '&mdash;') + '</td><td class="t-guide">' + (r.sm.guide ? r.sm.guide.done + ' done' + (r.sm.guide.todo ? '<br><small class="bad">' + r.sm.guide.todo + ' to describe</small>' : '') + '<br><small class="small">' + r.sm.guide.organisms + ' organisms</small>' : '\u2014') + '</td><td>' + r.sm.words + '</td><td>' + (r.sm.review.length || '') + '</td><td>' + esc(U.fmtTime(s.updated)) + '</td><td><button class="btn small primary" data-view="' + k + '">Report</button> <button class="btn small ghost" data-rm="' + k + '">Remove</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function addText(text, src) {
+    var t = String(text || '').trim(); if (!t) return 0;
+    if (t.charAt(0) === '{') { add(S.parseFileText(t), src); return 1; }
+    var codes = t.split(/\s+/).filter(function (x) { return /^DAW\d+\./.test(x); }); if (!codes.length) { add({ error: 'No codes found (codes start with DAW, like DAW7.)' }, src); return 1; }
+    codes.forEach(function (c, k) { add(S.decodeCode(c), src + (codes.length > 1 ? ' #' + (k + 1) : '')); }); return codes.length;
+  }
+  U.$('#t-add').onclick = function () { var n = addText(U.$('#t-codes').value, 'Pasted code'); U.$('#t-codes').value = ''; U.$('#t-msg').textContent = n + ' added.'; paint(); };
+  U.$('#t-files').onchange = function (e) { var fs = Array.prototype.slice.call(e.target.files); Promise.all(fs.map(function (f) { return U.readFile(f).then(function (t) { addText(t, f.name); }); })).then(function () { U.$('#t-msg').textContent = fs.length + ' file(s) added.'; paint(); e.target.value = ''; }); };
+  U.$('#t-clear').onclick = function () { rows = []; U.$('#t-report').innerHTML = ''; paint(); };
+  U.$('#t-csv').onclick = function () {
+    var head = ['Student', 'Period', 'Verified', 'Missions finished', 'Missions in game', 'TEKS with evidence', 'TEKS in tracker'].concat(S.SUBJECTS.map(function (s) { return s.name + ' TEKS with evidence'; })).concat(['Evidence strong', 'Evidence weak', 'Evidence missing', 'Described', 'Needs description', 'Organisms', 'Words', 'Civilization problems looked back on', 'Challenge level', 'Justifications written', 'Predictions looked back on', 'Stretch answers', 'Needs review', 'Last saved']);
+    var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [head.join(',')].concat(rows.filter(function (r) { return r.save; }).map(function (r) { return [r.save.student.name, r.save.student.period, r.verified ? 'yes' : 'NO', r.sm.done, r.sm.total, r.sm.tracker.done, r.sm.tracker.total].concat(S.SUBJECTS.map(function (s) { var b = r.by[s.id]; return b && b.total ? S.subjectCounts(r.sm.tracker, s.id).evidence : ''; })).concat(r.ev ? [r.ev.strong, r.ev.weak, r.ev.missing] : ['', '', '']).concat([r.sm.guide ? r.sm.guide.done : '', r.sm.guide ? r.sm.guide.todo : '', r.sm.guide ? r.sm.guide.organisms : '', r.sm.words, (window.DAW_CIVC && r.save.civ && r.save.civ.started ? window.DAW_CIVC.byState(r.save).done.length : '')]).concat((function () { var sm = window.DAW_CIVC && r.save.civ && r.save.civ.started ? window.DAW_CIVC.summary(r.save, null) : null; return sm ? [sm.mode, sm.justified, sm.predLooked, sm.stretch] : ['', '', '', '']; })()).concat([r.sm.review.length, r.save.updated]).map(q).join(','); }));
+    U.download('DesignAWorld-class.csv', lines.join('\n'), 'text/csv');
+  };
+  document.addEventListener('click', function (e) {
+    var v = e.target.closest('[data-view]'), rm = e.target.closest('[data-rm]');
+    if (rm) { rows.splice(+rm.getAttribute('data-rm'), 1); U.$('#t-report').innerHTML = ''; paint(); }
+    if (v) { var r = rows[+v.getAttribute('data-view')]; U.$('#t-report').innerHTML = '<div class="t-actions"><h3 style="margin:0;flex:1">Report: ' + esc(r.save.student.name) + ' ' + (r.verified ? '<span class="ok">&#10003; Verified</span>' : '<span class="bad">&#10007; Changed after it was made</span>') + '</h3><button class="btn primary" id="t-print">Print / Save as PDF</button></div>' + R.html(r.save, ix, { source: r.kind === 'file' ? 'Save file' : 'Turn-in code', all: true }); U.$('#t-print').onclick = function () { R.print(r.save, ix, { source: 'Teacher view', all: true }); }; U.$('#t-report').scrollIntoView({ behavior: 'smooth' }); }
+  });
+  // history events: teacher notes, safety, and a full preview of every choice
+  (function () {
+    var WC = window.DAW_WORLDC, W = window.DAW_WORLD_DATA; if (!WC || !W) return; WC.install(S, W, { artOf: function (id) { return DAW_ITEMS.get(id).art; } }); if (window.DAW_FUNC) { window.DAW_FUNC.install(S, window.DAW_FUN_DATA, null, { artOf: function (id) { return DAW_ITEMS.get(id).art; } }); window.DAW_FUNC.hook(); }
+    var evo = U.$('#t-ev-off'); try { evo.checked = localStorage.getItem('daw.teacher.eventsOff') === '1'; } catch (e) {}
+    function evlink() { U.$('#t-ev-link').textContent = new URL('index.html?events=off', location.href).href; }
+    evo.onchange = function () { try { localStorage.setItem('daw.teacher.eventsOff', evo.checked ? '1' : '0'); } catch (e) {} evlink(); }; evlink();
+    var CC = window.DAW_CIVC; if (CC) { CC.install(S, window.DAW_PACKS || {}, { artOf: function (id) { return DAW_ITEMS.get(id).art; }, scan: WC.scanText });
+      var msel = U.$('#t-mode'), mcur = null; try { mcur = localStorage.getItem('daw.teacher.mode'); } catch (e) {} msel.value = mcur === 'support' ? 'support' : 'challenge';
+      var mlink = function () { U.$('#t-mode-link').textContent = new URL('index.html?mode=' + msel.value, location.href).href; };
+      msel.onchange = function () { try { localStorage.setItem('daw.teacher.mode', msel.value); localStorage.setItem('daw.teacher.modeAt', String(Date.now())); } catch (e) {} mlink(); }; mlink();
+      var gsel = U.$('#t-grade'), gcur = null; try { gcur = localStorage.getItem('daw.teacher.grade'); } catch (e) {} gcur = gcur || CC.index().default;
+      gsel.innerHTML = CC.index().packs.map(function (p) { return '<option value="' + p.id + '"' + (p.status !== 'ready' ? ' disabled' : '') + (p.id === gcur ? ' selected' : '') + '>' + esc(p.title) + (p.status !== 'ready' ? ' (coming soon)' : '') + '</option>'; }).join('');
+      var glink = function () { U.$('#t-grade-link').textContent = new URL('index.html?grade=' + gsel.value, location.href).href; };
+      gsel.onchange = function () { try { localStorage.setItem('daw.teacher.grade', gsel.value); } catch (e) {} glink(); }; glink();
+      var pk = CC.pack(gsel.value) || CC.pack('g5'); if (pk) U.$('#t-civ-list').innerHTML = '<details><summary><b>' + esc(pk.title) + ': ' + pk.problems.length + ' problems</b></summary>' + pk.systems.map(function (sy) { return '<h4>' + esc(sy.name) + ' <small>' + esc(sy.teks.join(', ')) + '</small></h4><ul>' + pk.problems.filter(function (p) { return p.system === sy.id; }).map(function (p) { return '<li><b>' + esc(p.title) + '</b> <small>' + esc(p.teks.join(', ')) + '</small><br><small>Options: ' + CC.safeOptions(p).map(function (o) { return esc(o.text); }).join(' / ') + '</small></li>'; }).join('') + '</ul>'; }).join('') + '</details>'; }
+    var off = U.$('#t-hist-off'); try { off.checked = localStorage.getItem('daw.teacher.historyOff') === '1'; } catch (e) {}
+    function link() { U.$('#t-hist-link').textContent = new URL('index.html?history=off', location.href).href; }
+    off.onchange = function () { try { localStorage.setItem('daw.teacher.historyOff', off.checked ? '1' : '0'); } catch (e) {} link(); }; link();
+    var meta = (W.history && W.history.meta) || {}, sc = (W.history && W.history.scan) || {};
+    U.$('#t-hist-rules').innerHTML = '<p><b>Content rules (School Bot):</b></p><ul>' + (meta.engineRules || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul><p class="small">Harmful-choice scan: ' + (sc.choicesScanned || 0) + ' choices in ' + (sc.arcs || 0) + ' events, <b>' + ((sc.flagged || []).length) + ' flagged</b>. Flagged choices are never shown to students.</p>';
+    U.$('#t-hist-list').innerHTML = WC.arcs().map(function (arc) {
+      var tn = arc.thenAndNow || {};
+      return '<details class="t-arc" data-arc="' + esc(arc.id) + '"><summary><b>' + esc(arc.title) + '</b> <small>Stage ' + arc.stage + ' \u00b7 ' + esc((arc.teks || []).join(', ')) + '</small></summary>' + (arc.teacherNote ? '<div class="t-note"><b>Teacher note:</b> ' + esc(arc.teacherNote) + '</div>' : '') +
+        '<p class="small"><b>When it appears:</b> ' + esc((arc.trigger || {}).condition || '') + '</p><p>' + esc((arc.trigger || {}).narrative || '') + '</p>' +
+        (arc.beats || []).map(function (b, bi) { return '<div class="t-beat"><p><b>Part ' + (bi + 1) + ':</b> ' + esc(b.situation || '') + '</p><ul>' + (b.choices || []).map(function (c) { var hit = WC.scanChoice(c); return '<li>' + (hit.length ? '<span class="bad">FLAGGED (hidden from students)</span> ' : '') + esc(c.text) + ' <small>(' + WC.METERS.map(function (k) { return k + ' ' + ((c.consequences || {})[k] || 0); }).join(', ') + ')</small></li>'; }).join('') + '</ul>' + (b.artifact ? '<p class="small">Writing: ' + esc(b.artifact.genre) + ' \u2014 ' + esc(b.artifact.prompt || '') + '</p>' : '') + '</div>'; }).join('') +
+        '<p class="small"><b>Then & Now sources:</b> ' + (tn.sources || []).map(function (x) { return esc(x.citation || ''); }).join('; ') + '</p><p><a class="btn small ghost" target="_blank" rel="noopener" href="index.html?unlock=all#history=' + esc(arc.id) + '">Preview in the game</a></p></details>';
+    }).join('');
+  })();
+  var h = location.hash.slice(1); if (h.indexOf('code=') === 0) { addText(decodeURIComponent(h.slice(5)), 'Link'); }
+  paint(); window.DAW_TEACHER_READY = true;
+})();
+</script>
+</body>
+</html>

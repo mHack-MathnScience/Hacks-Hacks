@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design a World</title>
+<meta name="description" content="Design a World: a Grade 5 science world-building game aligned to the Texas TEKS.">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#13294B">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/fun.css">
+<link rel="stylesheet" href="css/civ.css">
+</head>
+<body>
+<a class="skip-link" href="#map">Skip to the map</a>
+<header class="top">
+  <div class="brand"><img src="icons/icon.svg" alt="" width="34" height="34"><div><b>Design a World</b><small id="who">Explorer</small></div></div>
+  <nav id="stepper" class="stepper" aria-label="Stages"></nav>
+  <div class="top-right">
+    <div id="xp" class="xp" title="Experience points"></div>
+    <button id="needs-btn" class="hbtn" title="World Needs: what your world needs right now"><span class="hic">&#9873;</span><span>Needs</span><b class="n cnt" hidden></b></button>
+    <button id="teks-btn" class="hbtn" title="TEKS tracker"><span class="hic">&#10003;</span><span>TEKS</span><b class="n">0</b></button>
+    <button id="budget-btn" class="hbtn" title="Budget and economy"><span class="hic coin">&#162;</span><b id="coins">0</b></button>
+    <button id="guide-btn" class="hbtn" title="Field Guide: describe what you placed"><span class="hic">&#9752;</span><span>Field Guide</span><b class="n cnt" hidden></b></button>
+    <button id="writing-btn" class="hbtn" title="Writing workspace"><span class="hic">&#9998;</span><span>Writing</span></button>
+    <button id="charts-btn" class="hbtn" title="Data and graphs"><span class="hic">&#9636;</span><span>Data</span></button>
+    <button id="save-btn" class="hbtn" title="Save and load"><span class="hic">&#8681;</span><span>Save</span></button>
+    <button id="showcase-btn" class="hbtn" title="World Showcase: tour, present, and evidence"><span class="hic">&#9733;</span><span>Showcase</span></button>
+    <button id="turnin-btn" class="hbtn primary" title="Turn in my work"><span>Turn in</span></button>
+    <button id="ach-btn" class="hbtn icon ach-hb" title="Achievements" aria-label="Achievements"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="9" r="6.5" fill="#fab005" stroke="#e8590c" stroke-width="1.5"/><path d="M12 5.5l1.1 2.3 2.5.3-1.8 1.7.5 2.5L12 11.1l-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z" fill="#fff"/><path d="M8.5 14.5L7 22l5-2.5 5 2.5-1.5-7.5" fill="#1c7ed6"/></svg><b class="n cnt" hidden></b></button>
+    <button id="sound-btn" class="hbtn icon" title="Sound off (tap to turn on)" aria-label="Sound is off. Turn sound on" aria-pressed="false"></button>
+    <button id="settings-btn" class="hbtn icon" title="Settings" aria-label="Settings">&#9881;</button>
+    <button id="help-btn" class="hbtn icon" title="How to play" aria-label="How to play">?</button>
+  </div>
+</header>
+<main class="layout">
+  <aside class="left" aria-label="Places to build"><div class="panel-title">Build</div><div id="palette" class="palette"></div></aside>
+  <section class="center">
+    <div id="maptools" class="maptools" role="toolbar" aria-label="Map tools">
+      <div class="tgroup"><button class="tool" data-tool="place" aria-pressed="true" title="Build">&#10010; Build</button><button class="tool" data-tool="select" aria-pressed="false" title="Look at a place">&#9757; Info</button><button class="tool" data-tool="erase" aria-pressed="false" title="Remove a place">&#10006; Erase</button><button class="tool" data-tool="measure" aria-pressed="false" title="Area and perimeter">&#9633; Measure</button><button class="tool" data-tool="volume" aria-pressed="false" title="Volume of a prism">&#9635; Volume</button><button class="tool" data-tool="biome" aria-pressed="false" title="Paint biomes">&#127912; Biomes</button></div>
+      <div class="tgroup"><button class="tog" data-k="grid" aria-pressed="false">Grid</button><button class="tog" data-k="coords" aria-pressed="false" title="Show coordinates">(x, y)</button><button class="tog" data-k="compass" aria-pressed="true">Compass</button><button class="tog" data-k="scale" aria-pressed="true">Scale</button><button class="tog" data-k="legend" aria-pressed="false">Legend</button></div>
+      <div class="tgroup zoomg"><button class="zoom" data-d="-0.2" aria-label="Zoom out">&minus;</button><button class="zoom" data-d="0.2" aria-label="Zoom in">+</button></div>
+    </div>
+    <div id="civ-bar" class="civ-bar" hidden aria-label="Civilizations: year and time speed"></div>
+    <div id="biome-panel" class="biome-panel" hidden></div>
+    <div id="map" class="map" aria-label="World map. Use the coordinate box below to place items with the keyboard."></div>
+    <div class="mapfoot">
+      <form id="coord-form" class="coord-form" aria-label="Place at coordinates"><span>Place at (</span><input id="cx" type="number" min="0" max="23" step="1" aria-label="x coordinate" placeholder="x"><span>,</span><input id="cy" type="number" min="0" max="23" step="1" aria-label="y coordinate" placeholder="y"><span>)</span><button class="btn small">Place</button></form>
+      <div id="readout" class="readout" aria-live="polite">Pick a place on the left, then tap the map.</div>
+      <span id="hover-xy" class="hover-xy"></span>
+      <span id="saved" class="saved-ind" aria-live="polite"></span>
+    </div>
+  </section>
+  <aside class="right" aria-label="Missions"><div class="panel-title">Missions</div><div id="missions"></div></aside>
+</main>
+<div id="print-area"></div>
+<script src="js/vendor/lz-string.min.js"></script>
+<script src="data/missions.js"></script>
+<script src="js/biomes.js"></script>
+<script src="js/state.js"></script>
+<script src="data/world.js"></script>
+<script src="js/world-core.js"></script>
+<script src="data/packs/index.js"></script>
+<script src="data/packs/g5.js"></script>
+<script src="js/civ-core.js"></script>
+<script src="js/nature-core.js"></script>
+<script src="data/describe.js"></script>
+<script src="js/describe-core.js"></script>
+<script src="data/fun.js"></script>
+<script src="data/achievements.js"></script>
+<script src="js/fun-core.js"></script>
+<script src="js/checkers.js"></script>
+<script src="js/art-core.js"></script>
+<script src="js/art-items1.js"></script>
+<script src="js/art-items2.js"></script>
+<script src="js/art-items3.js"></script>
+<script src="js/art-landforms.js"></script>
+<script src="js/art-organisms.js"></script>
+<script src="js/art-organisms2.js"></script>
+<script src="audio/manifest.js"></script>
+<script src="js/narration.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/items.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/map.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/tasks1.js"></script>
+<script src="js/tasks2.js"></script>
+<script src="js/tasks3.js"></script>
+<script src="js/mission.js"></script>
+<script src="js/report.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/work.js"></script>
+<script src="js/timelapse.js"></script>
+<script src="js/describe-ui.js"></script>
+<script src="js/biome-ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/world-ui.js"></script>
+<script src="js/showcase.js"></script>
+<script src="js/fun-art.js"></script>
+<script src="js/fun-ui.js"></script>
+<script src="js/fun-panels.js"></script>
+<script src="js/civ-ui.js"></script>
+<script src="js/nature-ui.js"></script>
+<script src="js/challenge-core.js"></script>
+<script src="js/challenge-ui.js"></script>
+</body>
+</html>

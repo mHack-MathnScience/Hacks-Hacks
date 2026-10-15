@@ -1,0 +1,11 @@
+{
+  "name": "Design a World",
+  "short_name": "Design a World",
+  "description": "Grade 5 science world-building game (Texas TEKS).",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#13294B",
+  "theme_color": "#13294B",
+  "icons": [ { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" } ]
+}
