@@ -117,6 +117,25 @@ function Hub() {
         />
       </div>
 
+      {/* Standalone: Design a World is its own app in /design-a-world/. It has its own save and does not use Math/Science progress or any login. */}
+      <a href="/design-a-world/" className="group mt-4 block no-underline">
+        <Card className="transition-[border-color] duration-200 hover:border-line-strong">
+          <CardContent className="flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+            <div>
+              <p className="text-xs tracking-[0.14em] text-muted uppercase">Grade 5 · Build a world</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">Design a World</h2>
+              <p className="mt-1 text-sm text-muted">
+                Build an island, finish missions, and guide a growing civilization. It keeps its own save on this device.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-forest">
+              Open Design a World
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </CardContent>
+        </Card>
+      </a>
+
       <p className="mt-10 max-w-2xl text-xs leading-relaxed text-faint">
         Math aligned to 19 TAC §111.7 (2012). Science labs follow the Grade 5 science TEKS implemented in 2024 (19 TAC
         §112.16). Progress is stored only on this device.

@@ -1,0 +1,71 @@
+/* Civilization layer (god game) */
+.civ-bar { position: absolute; top: 50px; left: 66px; z-index: 7; display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: rgba(255,253,245,.95); border: 1px solid #e9e2cc; border-radius: 999px; box-shadow: 0 4px 12px rgba(20,40,60,.16); font-size: 12.5px; max-width: calc(100% - 90px); flex-wrap: nowrap; }
+.civ-bar[hidden] { display: none; }
+.civ-bar .btn.small { padding: 3px 10px; font-size: 12px; min-height: 0; white-space: nowrap; }
+.civ-ic { font-size: 18px; color: #7048e8; }
+.civ-year { display: flex; flex-direction: column; line-height: 1; align-items: center; padding: 0 4px; } .civ-year small { font-size: 9.5px; color: var(--muted, #667); text-transform: uppercase; letter-spacing: .05em; } .civ-year b { font-size: 16px; color: #13294B; font-variant-numeric: tabular-nums; }
+.civ-speed { display: inline-flex; border: 1px solid #d0d7de; border-radius: 999px; overflow: hidden; }
+.civ-sp { border: 0; background: #fff; padding: 3px 7px; font-size: 10px; color: #13294B; letter-spacing: -2px; cursor: pointer; min-width: 30px; }
+.civ-sp.on { background: #13294B; color: #fff; }
+.civ-pop { white-space: nowrap; color: #13294B; font-weight: 600; }
+.civ-alert { display: inline-block; text-align: left; background: #fff4e6 !important; border-color: #f08c00 !important; color: #a5480a !important; font-weight: 700; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.civ-bar.paused .civ-year b { color: #a5480a; }
+#civ-modal .modal { max-width: 980px; }
+.civ-meters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.civ-m { display: flex; flex-direction: column; padding: 4px 10px; border-radius: 10px; background: #f1f3f5; font-size: 12px; } .civ-m small { color: #667; } .civ-m.up { background: #ebfbee; } .civ-m.down { background: #fff4e6; }
+.civ-card { border: 1px solid #e3e8ee; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; background: #fff; }
+.civ-card header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; } .civ-card h3 { margin: 0; font-size: 17px; } .civ-teks { color: #667; }
+.civ-card.reflect { border-color: #b197fc; background: #f8f5ff; } .civ-card.unfold { background: #f8fbff; }
+.civ-sys { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #e7f5ff; color: #1864ab; }
+.sys-trade { background: #fff9db; color: #8a6d00; } .sys-move { background: #fff0f6; color: #a61e4d; } .sys-gov { background: #f3f0ff; color: #5f3dc4; } .sys-env { background: #ebfbee; color: #2b8a3e; }
+.civ-sit { font-size: 14.5px; }
+.civ-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .civ-cols h4, .civ-card h4 { margin: 8px 0 4px; font-size: 13.5px; }
+.civ-voices, .civ-facts, .civ-later { margin: 0; padding-left: 18px; font-size: 13px; } .civ-later .pending { color: #667; font-style: italic; list-style: none; margin-left: -18px; }
+.civ-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.civ-opt { border: 1px solid #d0d7de; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 4px; background: #fcfdff; } .civ-opt p { margin: 0; } .civ-ot { font-weight: 700; } .civ-opt .btn { margin-top: auto; align-self: flex-start; }
+.civ-opt .good, .civ-sortfb .good { color: #2b8a3e; } .civ-opt .civ-cost { color: #c2255c; }
+.civ-doc { width: 100%; font: inherit; border-radius: 8px; border: 1px solid #ced4da; padding: 6px; } .civ-cl { margin: 2px 0; padding-left: 18px; color: #555; }
+.civ-sort, .civ-pick, .civ-vote, .civ-land-task { background: #f8f9fa; border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+.civ-job { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 3px 6px; border-radius: 6px; font-size: 13px; } .civ-job.good { background: #ebfbee; } .civ-job.bad { background: #fff0f0; }
+.civ-pick .cbx { display: inline-flex; margin: 2px 10px 2px 0; font-size: 13px; }
+.civ-ballots { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; } .ballot { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; background: #e7f5ff; } .ballot.b { background: #fff9db; }
+.civ-vote input { width: 60px; }
+.civ-tn { background: #fffbea; border-left: 4px solid #fab005; padding: 6px 10px; border-radius: 6px; margin: 8px 0; font-size: 13px; } .civ-tn h4 { margin: 0 0 4px; }
+.civ-quiet { text-align: center; padding: 20px; color: #445; }
+.civ-tbl { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 10px; } .civ-tbl th, .civ-tbl td { border-bottom: 1px solid #e9ecef; padding: 4px 6px; text-align: left; vertical-align: top; }
+.civ-chart { width: 100%; max-width: 600px; height: auto; display: block; }
+.civ-prices { display: flex; gap: 12px; flex-wrap: wrap; } .civ-price { display: flex; flex-direction: column; padding: 8px 14px; border-radius: 12px; background: #f1f3f5; } .civ-price b { font-size: 18px; color: #13294B; }
+.civ-gov { padding-left: 20px; } .civ-gov li { margin: 4px 0; color: #667; } .civ-gov li.done { color: #2b8a3e; font-weight: 700; }
+.civ-log { padding-left: 0; list-style: none; font-size: 13px; max-height: 420px; overflow: auto; } .civ-log li { padding: 3px 0; border-bottom: 1px dashed #e9ecef; } .civ-log b { display: inline-block; width: 46px; color: #13294B; } .civ-log .k-problem { color: #a5480a; } .civ-log .k-found, .civ-log .k-grow { color: #2b8a3e; }
+.civ-nation { background: #f3f0ff; padding: 6px 10px; border-radius: 8px; font-size: 13px; }
+.t-civ select { font: inherit; padding: 4px 6px; }
+@media print { .civ-bar { display: none !important; } }
+/* natural change + Shaping Energy (play only) */
+.nat-energy { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: #fff4d6; color: #7a5300; white-space: nowrap; }
+.nat-quiz { border: 2px dashed #2e7d32; border-radius: 12px; padding: 10px 14px; background: #f3faf3; margin-top: 8px; }
+.nat-q { margin: 6px 0; } .nat-q.done p b { color: #2e7d32; }
+.nat-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.nat-hint { color: #8a4b00; background: #fff4e0; border-radius: 8px; padding: 4px 8px; }
+.nat-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; } .nat-tool.locked { opacity: .55; }
+.nat-where { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 6px 0; } .nat-where input { width: 4.5em; }
+.nat-preview { border: 1px solid #d0d7de; border-radius: 10px; padding: 6px 12px; margin: 8px 0; }
+.nat-warn { background: #fff0f0; border: 2px solid #c92a2a; color: #7a1010; border-radius: 10px; padding: 8px 10px; }
+.nat-warn .cbx { display: block; margin-top: 6px; color: #333; }
+.nat-no { color: #8a4b00; font-weight: 600; }
+/* layout: controls never shrink; the bar wraps to a second row; only the settlements label may truncate */
+.civ-bar { flex-wrap: wrap; border-radius: 18px; row-gap: 4px; }
+.civ-bar > * { flex-shrink: 0; }
+.civ-bar .civ-speed { flex: 0 0 auto; } .civ-sp { flex: 0 0 auto; }
+.civ-bar .civ-pop { flex: 0 1 auto; min-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+.civ-bar .civ-alert { max-width: 100%; white-space: normal; overflow: visible; text-overflow: clip; flex-shrink: 1; line-height: 1.2; }
+/* GT challenge layer */
+.gc-cer { border: 1px solid #d0d7de; border-radius: 12px; padding: 8px 12px; margin: 8px 0; background: #fbfaff; }
+.gc-part { display: block; margin: 6px 0; } .gc-part textarea { width: 100%; font-size: 14px; } .gc-part small { color: #667; }
+.gc-wc { color: #8a4b00; } .gc-wc.good { color: #2e7d32; }
+.gc-check .cbx { display: block; }
+.gc-alloc { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; } .gc-alloc h4 { width: 100%; margin: 4px 0; } .gc-alloc input { width: 4.2em; }
+.gc-short { color: #a5480a; font-weight: 700; }
+.gc-pred, .gc-look { border-left: 4px solid #1c7ed6; } .gc-watch { color: #1c5d99; }
+.gc-stretch { border-left: 4px solid #7048e8; }
+.my-try { display: block; margin: 6px 0; } .my-try textarea { width: 100%; }
+.r-cer { border-left: 3px solid #7048e8; padding-left: 8px; margin: 6px 0; }
