@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Calculator, FlaskConical } from "lucide-react";
+import { ArrowRight, Calculator, FlaskConical, Globe } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -116,6 +116,30 @@ function Hub() {
           score={mounted && sciAtt ? `${Math.round((sciCor / sciAtt) * 100)}%` : null}
         />
       </div>
+
+      <a href="/design-a-world/" className="group mt-4 block no-underline">
+        <Card className="transition-[border-color] duration-200 hover:border-line-strong">
+          <CardContent className="flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+            <div className="flex gap-4">
+              <span className="mt-0.5 text-forest">
+                <Globe className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs tracking-[0.14em] text-muted uppercase">Grade 5 · Design a world</p>
+                <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">Design a World</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Take care of a planet. Climate, biomes, food webs, and nations change every season. Its save stays on
+                  this device and is separate from Math and Science progress.
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-forest">
+              Open Design a World
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </CardContent>
+        </Card>
+      </a>
 
       <p className="mt-10 max-w-2xl text-xs leading-relaxed text-faint">
         Math aligned to 19 TAC §111.7 (2012). Science labs follow the Grade 5 science TEKS implemented in 2024 (19 TAC

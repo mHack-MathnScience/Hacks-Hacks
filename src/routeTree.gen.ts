@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DesignAWorldRouteImport } from './routes/design-a-world'
 import { Route as MathRouteImport } from './routes/math'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as ScienceRouteImport } from './routes/science'
@@ -31,6 +32,11 @@ import { Route as ScienceStrandStrandIdRouteImport } from './routes/science.stra
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesignAWorldRoute = DesignAWorldRouteImport.update({
+  id: '/design-a-world',
+  path: '/design-a-world',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MathRoute = MathRouteImport.update({
@@ -121,6 +127,7 @@ const ScienceStrandStrandIdRoute = ScienceStrandStrandIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/design-a-world': typeof DesignAWorldRoute
   '/math': typeof MathRouteWithChildren
   '/progress': typeof ProgressRoute
   '/science': typeof ScienceRouteWithChildren
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/design-a-world': typeof DesignAWorldRoute
   '/progress': typeof ProgressRoute
   '/practice/$teks': typeof PracticeTeksRoute
   '/science/notebook': typeof ScienceNotebookRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/design-a-world': typeof DesignAWorldRoute
   '/math': typeof MathRouteWithChildren
   '/progress': typeof ProgressRoute
   '/science': typeof ScienceRouteWithChildren
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/design-a-world'
     | '/math'
     | '/progress'
     | '/science'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/design-a-world'
     | '/progress'
     | '/practice/$teks'
     | '/science/notebook'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/design-a-world'
     | '/math'
     | '/progress'
     | '/science'
@@ -241,6 +253,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DesignAWorldRoute: typeof DesignAWorldRoute
   MathRoute: typeof MathRouteWithChildren
   ProgressRoute: typeof ProgressRoute
   ScienceRoute: typeof ScienceRouteWithChildren
@@ -255,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design-a-world': {
+      id: '/design-a-world'
+      path: '/design-a-world'
+      fullPath: '/design-a-world'
+      preLoaderRoute: typeof DesignAWorldRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/math': {
@@ -422,6 +442,7 @@ const ScienceRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DesignAWorldRoute: DesignAWorldRoute,
   MathRoute: MathRouteWithChildren,
   ProgressRoute: ProgressRoute,
   ScienceRoute: ScienceRouteWithChildren,
