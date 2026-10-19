@@ -584,11 +584,7 @@
     ctx.fillStyle = "#fffdf8";
     ctx.fillRect(0, 0, w, h);
     var rows = S.history;
-    var max = 1;
-    rows.forEach(function (row) {
-      series.forEach(function (s) { if (row[s.key] > max) max = row[s.key]; });
-    });
-    var left = 36, right = 8, top = 16, bottom = 28;
+    var left = 8, right = 8, top = 8, bottom = 36;
     ctx.strokeStyle = "#e4dccb";
     ctx.beginPath();
     ctx.moveTo(left, top);
@@ -596,10 +592,12 @@
     ctx.lineTo(w - right, h - bottom);
     ctx.stroke();
     series.forEach(function (s) {
+      var smax = 1;
+      rows.forEach(function (row) { if (row[s.key] > smax) smax = row[s.key]; });
       ctx.beginPath();
       rows.forEach(function (row, i) {
         var x = left + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (w - left - right));
-        var y = (h - bottom) - (row[s.key] / max) * (h - top - bottom);
+        var y = (h - bottom) - (row[s.key] / smax) * (h - top - bottom);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
       ctx.strokeStyle = s.color;
@@ -607,9 +605,13 @@
       ctx.stroke();
     });
     ctx.font = "11px sans-serif";
-    series.forEach(function (s, i) {
+    var lx = left;
+    series.forEach(function (s) {
+      var last = rows.length ? Math.round(rows[rows.length - 1][s.key]) : 0;
+      var label = s.name + " " + last;
       ctx.fillStyle = s.color;
-      ctx.fillText(s.name, left + i * 70, 12);
+      ctx.fillText(label, lx, h - 10);
+      lx += ctx.measureText(label).width + 12;
     });
   }
 
