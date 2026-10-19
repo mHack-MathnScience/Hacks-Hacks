@@ -423,6 +423,7 @@
       startT: null,
       heard: {},
       lastLf: null,
+      lastCheckYear: 0,
       warmed: 0,
     };
     refresh(state);
@@ -839,12 +840,22 @@
     if (tool === "mine") {
       if (cell.sea) return { ok: false, msg: "You cannot mine the open ocean in this model." };
       if (cell.coal <= 0 && cell.ore <= 0) {
-        return { ok: false, msg: "No coal or ore in this rock. Fossil fuels and metal ores formed only in some places, long ago. They are nonrenewable, and they are not everywhere." + teach(state, "nonrenewable") };
+        return {
+          ok: false,
+          empty: true,
+          msg: "Nothing to mine at (" + c + ", " + r + "). This rock has no coal and no ore. Fossil fuels and metal ores formed only in some places, long ago. Look for the sparkle." + teach(state, "nonrenewable"),
+        };
       }
       cell.use = "mine";
-      return done("You opened a mine at (" + c + ", " + r + "). " + (cell.coal > 0
-        ? "Coal is a fossil fuel: ancient wetland plants buried, pressed, and changed in sedimentary rock. It will not grow back." + teach(state, "fossil fuel")
-        : "Ore is a nonrenewable metal resource. Digging it up adds goods and some pollution."));
+      var scooped = scoopCell(state, cell);
+      var leftCoal = 0, leftOre = 0;
+      state.cells.forEach(function (c0) { leftCoal += c0.coal; leftOre += c0.ore; });
+      return done("You opened a mine at (" + c + ", " + r + "). " + scooped +
+        " Coal left in the ground: " + r1(leftCoal) + ". Ore left: " + r1(leftOre) +
+        ". Heat index: " + state.co2.toFixed(1) + ". " +
+        (cell.coal > 0 || scooped.indexOf("Coal") === 0
+          ? "Coal is ancient buried plants. It will not grow back." + teach(state, "fossil fuel")
+          : "Ore is a nonrenewable metal. Digging it adds goods and some pollution."));
     }
     var uses = { forest: "forest", farm: "farm", pasture: "pasture", town: "town", suburb: "suburb", solar: "solar" };
     if (uses[tool]) {
@@ -1032,12 +1043,13 @@
   }
 
   function step(state) {
-    if (state.pending) return { blocked: true };
     state.year += 1;
     rollWeather(state);
     refresh(state);
     var logs = [];
-    logs.push(state.weather.name + ". Weather is this season only." + teach(state, "weather") + " The biome map follows climate, the long pattern, so one storm does not repaint a desert into a forest.");
+    var weatherLine = state.weather.name + ".";
+    if (state.year === 1) weatherLine += teach(state, "weather") + " The biome map follows climate, the long pattern, so one storm does not repaint a desert into a forest.";
+    logs.push(weatherLine);
     waterSentence(state, logs);
     updateMoisture(state, logs);
     landforms(state, logs);
@@ -1046,15 +1058,28 @@
     nationStep(state, logs);
     referBack(state, logs);
     var check = pickCheck(state);
-    logs.forEach(function (t) { if (t) state.log.push({ year: state.year, text: t }); });
-    if (state.log.length > 80) state.log = state.log.slice(-80);
-    if (check) state.pending = check;
+    commitLogs(state, logs);
+    if (check && !state.pending) state.pending = check;
     snapshot(state);
     state.undo = null;
     return { blocked: false, check: check };
   }
 
+  function commitLogs(state, logs) {
+    var seen = {};
+    state.log.slice(-8).forEach(function (e) { seen[e.text.slice(0, 48)] = 1; });
+    logs.forEach(function (t) {
+      if (!t) return;
+      var key = t.slice(0, 48);
+      if (seen[key]) return;
+      seen[key] = 1;
+      state.log.push({ year: state.year, text: t });
+    });
+    if (state.log.length > 60) state.log = state.log.slice(-60);
+  }
+
   function waterSentence(state, logs) {
+    if (state.year % 4 !== 1 && state.view.stored < 30) return;
     var v = state.view;
     logs.push(
       "Water cycle: the Sun evaporated about " + r1(v.evap) + " units from oceans and lakes. Wind from the west carried moisture. Land rain was about " +
@@ -1194,41 +1219,36 @@
   function ecology(state, logs) {
     var npp = productivity(state);
     var roles = countLife(state);
-    var K = Math.max(120, npp.land * 5.2);
-    var growth = npp.land * (1.05 - state.plants / K);
     var pasturesNow = countUse(state, "pasture");
-    if (pasturesNow >= 4) growth *= 0.35;
-    state.plants = Math.max(0, state.plants + growth);
-    if (pasturesNow >= 4) state.plants = Math.max(0, state.plants * 0.8);
-    var herds = state.herb + roles.herbivore * 8 + pasturesNow * 6;
-    var want = herds * 0.85;
-    var eaten = Math.min(state.plants * 0.48, want);
-    state.plants = Math.max(0, state.plants - eaten);
-    var gained = eaten * 0.1;
-    if (eaten < want * 0.78) {
-      var beforeH = state.herb;
-      state.herb = Math.max(0, state.herb * 0.58);
-      if (beforeH - state.herb > 3) {
-        logs.push("Herbivores dropped from about " + r1(beforeH) + " to " + r1(state.herb) + ". They ate producers faster than the plants grew, so energy ran short. About one tenth of eaten plant energy can become herbivore energy. The rest leaves as heat and waste." + teach(state, "food web"));
-      }
-    } else {
-      state.herb = Math.max(0, state.herb * 0.9 + gained);
+    var plantK = Math.max(180, npp.land * 3.35);
+    if (pasturesNow >= 4) plantK *= Math.max(0.35, 1 - (pasturesNow - 3) * 0.12);
+    state.plants = Math.max(40, state.plants + state.plants * 0.28 * (1 - state.plants / plantK));
+    var herbK = Math.max(12, state.plants * 0.078);
+    if (pasturesNow >= 5) herbK *= 0.42;
+    var beforeH = state.herb;
+    state.herb = Math.max(0, state.herb + state.herb * 0.2 * (1 - state.herb / herbK));
+    if (pasturesNow >= 5 && state.year > 1) {
+      state.plants = Math.max(30, state.plants * 0.9);
+      if (state.herb > herbK * 1.05) state.herb *= 0.62;
     }
-    var preyWant = state.carn * 1.05 + roles.carnivore * 2;
-    var prey = Math.min(state.herb * 0.22, preyWant);
-    state.herb = Math.max(0, state.herb - Math.min(state.herb, prey));
-    if (prey < state.carn * 0.55) state.carn = Math.max(0, state.carn * 0.68);
-    else state.carn = Math.max(0, state.carn * 0.9 + prey * 0.1);
-    var algae = npp.water;
+    var gained = Math.min(state.plants * 0.08, state.herb * 0.4) * 0.1;
+    if (beforeH - state.herb > Math.max(6, beforeH * 0.25)) {
+      logs.push("Herbivores dropped from about " + r1(beforeH) + " to " + r1(state.herb) + ". They ate producers faster than the plants grew, so energy ran short. About one tenth of eaten plant energy can become herbivore energy. The rest leaves as heat and waste." + teach(state, "food web"));
+    }
+    var carnK = Math.max(2, state.herb * 0.075 + roles.carnivore);
+    var beforeC = state.carn;
+    state.carn = Math.max(0, state.carn + state.carn * 0.18 * (1 - state.carn / carnK));
+    if (beforeC - state.carn > Math.max(2, beforeC * 0.3) && beforeH - state.herb > 4) {
+      logs.push("Carnivores fell from about " + r1(beforeC) + " to " + r1(state.carn) + " a season after their prey thinned. Energy reaches them only through the animals they eat.");
+    }
     var dams = countDams(state);
-    var fishWant = state.fish * (dams ? 0.75 : 1);
-    var fishEat = Math.min(algae * 0.8, fishWant);
-    if (dams) fishEat *= Math.max(0.45, 1 - dams * 0.12);
-    if (fishEat < state.fish * 0.45) {
-      var bf = state.fish;
-      state.fish = Math.max(0, state.fish * 0.7);
-      if (bf - state.fish > 2) logs.push("Fish fell from about " + r1(bf) + " to " + r1(state.fish) + ". Dams and dirty water block paths fish inherit: many swim upstream to lay eggs. Fewer young means fewer fish later, not always the same season.");
-    } else state.fish = Math.max(0, state.fish * 0.88 + fishEat * 0.1);
+    var fishK = Math.max(4, npp.water * 0.5);
+    if (dams) fishK *= Math.max(0.35, 1 - dams * 0.2);
+    var beforeF = state.fish;
+    state.fish = Math.max(0, state.fish + state.fish * 0.16 * (1 - state.fish / fishK));
+    if (dams && beforeF - state.fish > 2) {
+      logs.push("Fish fell from about " + r1(beforeF) + " to " + r1(state.fish) + ". Dams block paths fish inherit: many swim upstream to lay eggs. Fewer young means fewer fish later, not always the same season.");
+    }
     if (roles.dragon) {
       var need = roles.dragon * 28;
       if (state.herb + state.carn < need) {
@@ -1249,19 +1269,39 @@
     state.cells.forEach(function (cell, i) {
       if (cell.sea) return;
       if (cell.use === "forest" || state.view.biome[i] === "forest" || cell.use === "wild") cell.soil = clamp(cell.soil + soilAdd, 5, 100);
-      if ((cell.use === "pasture" || (state.view.biome[i] === "grassland" && pressure > 0.2)) && (pressure > 0.15 || pastures >= 4)) {
-        cell.soil = clamp(cell.soil - (pressure > 0.2 ? 9 : 5), 8, 100);
+      if (cell.use === "pasture" && pastures >= 4) {
+        cell.soil = clamp(cell.soil - 4, 8, 100);
       }
       if (cell.road && state.view.biome[i] === "wetland") cell.soil = clamp(cell.soil - 2, 5, 100);
       if (cell.use === "mine") cell.soil = clamp(cell.soil - 1.5, 5, 100);
     });
-    if (pressure > 0.2 || pastures >= 6) {
+    if (pastures >= 5 || (pressure > 0.16 && pastures >= 4)) {
       state.heard.overgraze = (state.heard.overgraze || 0) + 1;
       if (state.heard.overgraze === 1) {
         logs.push("Too many grazers. Positive: people can eat meat and pasture animals for a while. Negative: grass and soil drop. Carnivores may crash a season later, when their prey is gone. That delay is easy to miss.");
       }
     }
-    logs.push("Energy: sunlight built about " + r1(npp.land) + " producer units on land and " + r1(npp.water) + " in water. Herbivores took in about " + r1(gained) + " of that (close to a tenth of what they ate). Decomposers returned about " + r1(state.decomp) + " nutrient units toward the soil." + teach(state, "producer") + teach(state, "decomposer"));
+    if (state.year % 4 === 1 || beforeH - state.herb > 6) {
+      logs.push("Energy: sunlight built about " + r1(npp.land) + " producer units on land and " + r1(npp.water) + " in water. Herbivores took in about " + r1(gained) + " of that (close to a tenth of what they ate). Decomposers returned about " + r1(state.decomp) + " nutrient units toward the soil." + teach(state, "producer") + teach(state, "decomposer"));
+    }
+  }
+
+  function scoopCell(state, cell) {
+    if (cell.coal > 0) {
+      var take = Math.min(6, cell.coal);
+      cell.coal -= take;
+      state.co2 += take * 0.7;
+      cell.pol = Math.min(100, cell.pol + 8);
+      state.heard.mined = (state.heard.mined || 0) + 1;
+      return "First scoop: " + r1(take) + " coal. It does not regrow, and the heat index climbed.";
+    }
+    if (cell.ore > 0) {
+      var ore = Math.min(2.4, cell.ore);
+      cell.ore -= ore;
+      cell.pol = Math.min(100, cell.pol + 5);
+      return "First scoop: " + r1(ore) + " ore. Metal ore does not regrow.";
+    }
+    return "The seam is already empty.";
   }
 
   function struggleLife(state, logs) {
@@ -1328,6 +1368,10 @@
           cell.ore -= ore;
           oreTake += ore;
           cell.pol = Math.min(100, cell.pol + 5);
+        } else if (!cell.spent) {
+          cell.spent = 1;
+          var p = rc(i);
+          logs.push("The mine at (" + p.c + ", " + p.r + ") is empty. Coal and ore do not grow back. The heat already added stays in the climate for a while.");
         }
       }
       if (cell.use === "solar") cell.pol = Math.max(0, cell.pol - 1);
@@ -1447,9 +1491,12 @@
     }
     var people = 0;
     state.nations.forEach(function (n) { people += n.people; });
-    logs.push("Nations now hold about " + r1(people) + " people. " + state.nations.map(function (n) {
-      return n.name + ": " + r1(n.people) + " people, food " + r1(n.food) + ", goods " + r1(n.goods) + ", " + (n.pattern || "a new settlement");
-    }).join(". ") + ".");
+    var prevPeople = state.history.length ? state.history[state.history.length - 1].people : people;
+    if (state.year % 4 === 0 || Math.abs(people - prevPeople) > 8) {
+      logs.push("Nations now hold about " + r1(people) + " people. " + state.nations.map(function (n) {
+        return n.name + ": " + r1(n.people) + " people, food " + r1(n.food) + ", goods " + r1(n.goods) + ", " + (n.pattern || "a new settlement");
+      }).join(". ") + ".");
+    }
   }
 
   function patternName(n) {
@@ -1520,21 +1567,33 @@
   }
 
   function pickCheck(state) {
-    var y = state.year;
-    var v = state.view;
-    if (y >= 1 && !state.checks["water"]) return checkWater(state);
-    if (y >= 2 && !state.checks["weather"]) return checkWeather(state);
-    if (y >= 3 && !state.checks["day"]) return checkDay();
-    if (state.lastLf && !state.checks["lf-" + state.lastLf.type]) return checkLandform(state);
+    if (state.pending) return null;
+    if (state.year < 3) return null;
+    if (state.lastCheckYear && state.year - state.lastCheckYear < 4) return null;
+    var check = triggeredCheck(state) || curriculumCheck(state);
+    if (check) state.lastCheckYear = state.year;
+    return check;
+  }
+
+  function triggeredCheck(state) {
     if (state.heard.mined && !state.checks.fossil) return checkFossil(state);
     if ((state.heard.overgraze || 0) >= 1 && !state.checks.grazers) return checkGrazers(state);
-    if (state.heard.traded && !state.checks.road) return checkRoad(state);
     if (state.heard.warm && !state.checks.warm) return checkWarm(state);
+    if (state.heard.traded && !state.checks.road) return checkRoad(state);
+    if (state.lastLf && !state.checks["lf-" + state.lastLf.type]) return checkLandform(state);
+    if ((countDams(state) || state.choices.some(function (c) { return c.tool === "capital" || c.tool === "dam" || c.tool === "road" || c.tool === "mine"; })) && !state.checks.adapt) return checkAdapt(state);
+    return null;
+  }
+
+  function curriculumCheck(state) {
+    var y = state.year;
+    if (!state.checks.water) return checkWater(state);
+    if (!state.checks.weather) return checkWeather(state);
+    if (!state.checks.day) return checkDay();
     if (y >= 4 && state.nations.length && !state.checks.regions) return checkRegions(state);
     if (hasSettlementMix(state) && !state.checks.settle) return checkSettle(state);
-    if ((countDams(state) || state.choices.some(function (c) { return c.tool === "capital"; })) && y >= 2 && !state.checks.adapt) return checkAdapt(state);
     if (placedAnimal(state) && !state.checks.structure) return checkStructure(state);
-    if (y >= 4 && placedAnimal(state) && !state.checks.learn) return checkLearn(state);
+    if (placedAnimal(state) && !state.checks.learn) return checkLearn(state);
     return null;
   }
 
@@ -1756,6 +1815,17 @@
     return { ok: true, note: choice.note };
   }
 
+  function skipCheck(state) {
+    var p = state.pending;
+    if (!p) return { ok: false };
+    state.checks[p.id] = {
+      id: p.id, standard: p.standard, title: p.title, prompt: p.prompt,
+      choice: "(skipped)", note: "", reason: "", year: state.year, skipped: true,
+    };
+    state.pending = null;
+    return { ok: true };
+  }
+
   function explainCell(state, c, r) {
     refresh(state);
     if (!inside(c, r)) return { paragraphs: ["Off the map."], defs: [] };
@@ -1859,9 +1929,13 @@
       var c = state.checks[id];
       lines.push("- " + c.title + " [" + c.standard + "] season " + c.year);
       lines.push("  Prompt: " + c.prompt);
-      lines.push("  Student chose: " + c.choice);
-      lines.push("  Student wrote: " + (c.reason || "(blank)"));
-      lines.push("  Science idea offered in the story: " + c.note);
+      if (c.skipped) {
+        lines.push("  Student skipped this card and kept playing.");
+      } else {
+        lines.push("  Student chose: " + c.choice);
+        lines.push("  Student wrote: " + (c.reason || "(blank)"));
+        lines.push("  Science idea offered in the story: " + c.note);
+      }
     });
     lines.push("");
     lines.push("Mismatches and justifications");
@@ -1946,6 +2020,7 @@
     undo: undo,
     step: step,
     answer: answer,
+    skipCheck: skipCheck,
     placeAnyway: placeAnyway,
     justifyAlert: justifyAlert,
     explainCell: explainCell,

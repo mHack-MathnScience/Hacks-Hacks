@@ -9,11 +9,16 @@
   <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-  <a class="skip" href="#map">Skip to the map</a>
+  <a class="skip" href="#world">Skip to the map</a>
   <main id="start" class="start">
+    <div class="hero-sky" aria-hidden="true">
+      <div class="sun-big"></div>
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+    </div>
     <p class="kicker">Grade 5 · science and geography</p>
     <h1>Design a World</h1>
-    <p class="lede">You are the caretaker of a small planet. Each season, sunlight, rain, soil, animals, and nations change together. There is no single right world. Your notebook keeps your choices and your reasons. It does not give a grade.</p>
+    <p class="lede">You take care of a small planet. Sunlight, rain, animals, and nations change together every season. There is no single right world. Your notebook keeps your choices and your reasons. It does not give a grade.</p>
     <form class="start-form" id="start-form">
       <label>Your name <input id="student-name" name="name" maxlength="40" autocomplete="nickname" placeholder="Optional"></label>
       <label>World seed <input id="seed" name="seed" inputmode="numeric" placeholder="Leave blank to surprise you"></label>
@@ -25,7 +30,7 @@
   <div id="app" hidden>
     <header class="top">
       <div class="brand">
-        <img src="icons/icon.svg" alt="">
+        <div class="globe" id="globe" aria-hidden="true"><span class="globe-sea"></span><span class="globe-land"></span><span class="globe-night"></span></div>
         <div><b>Design a World</b><small id="who">Explorer</small></div>
       </div>
       <div id="season-label">Season 0</div>
@@ -48,79 +53,91 @@
             <button type="button" data-view="climate" aria-pressed="false">Climate rain</button>
             <button type="button" data-view="weather" aria-pressed="false">This season</button>
           </div>
-          <p class="wind">Wind blows west to east. North is the top of the map.</p>
+          <p class="wind">Wind blows west to east. North is up. The gold line is sunlight feeding the web.</p>
         </div>
-        <div class="map-scroll">
-          <div id="map" class="map" role="grid" aria-label="Planet map"></div>
+        <div class="world-frame">
+          <canvas id="world" tabindex="0" aria-label="Planet map. Click a place to use the selected tool."></canvas>
         </div>
-        <div id="legend" class="legend"></div>
-        <p id="readout" class="readout" aria-live="polite">Choose a tool, then a cell.</p>
+        <p id="readout" class="readout" aria-live="polite">Choose a tool, then a place on the map.</p>
       </section>
       <aside class="side" aria-label="Season report">
         <h2 id="scenario-name">World</h2>
+        <div class="web" aria-label="Energy from the Sun">
+          <div class="sun-orb" aria-hidden="true"></div>
+          <svg class="beam" viewBox="0 0 240 36" aria-hidden="true">
+            <path d="M8 18 C70 18 90 8 120 18 S180 28 232 18" />
+          </svg>
+          <div class="web-pips" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>
         <ul class="meters">
-          <li>Producers <b id="plants">0</b></li>
-          <li>Herbivores <b id="herbivores">0</b></li>
-          <li>Carnivores <b id="carnivores">0</b></li>
-          <li>Fish <b id="fish">0</b></li>
-          <li>People <b id="people">0</b></li>
-          <li>Wood <b id="timber">0</b></li>
-          <li>Fresh water <b id="water">0</b></li>
-          <li>Coal left <b id="coal">0</b></li>
-          <li>Ore left <b id="ore">0</b></li>
-          <li>Heat index <b id="co2">0</b></li>
+          <li class="meter" data-meter="plants">Plants <b id="plants">0</b></li>
+          <li class="meter" data-meter="herb">Grazers <b id="herbivores">0</b></li>
+          <li class="meter" data-meter="carn">Hunters <b id="carnivores">0</b></li>
+          <li class="meter" data-meter="fish">Fish <b id="fish">0</b></li>
+          <li class="meter" data-meter="people">People <b id="people">0</b></li>
+          <li class="meter" data-meter="timber">Wood <b id="timber">0</b></li>
+          <li class="meter" data-meter="water">Water <b id="water">0</b></li>
+          <li class="meter" data-meter="coal">Coal <b id="coal">0</b></li>
+          <li class="meter" data-meter="ore">Ore <b id="ore">0</b></li>
+          <li class="meter" data-meter="co2">Heat <b id="co2">0</b></li>
         </ul>
-        <div class="cycle">
-          <h2>Water cycle and food web</h2>
-          <p id="cycle-text"></p>
-        </div>
-        <div class="goals">
-          <h2>Goals in tension</h2>
-          <div id="goals"></div>
-        </div>
+        <div class="goals"><div id="goals"></div></div>
         <div class="dial">
-          <h2>Spin the day</h2>
-          <p id="sun-text"></p>
           <div class="row" id="sun-buttons"></div>
           <div class="dial-face" aria-hidden="true"><div class="stick" id="stick"></div><div class="shadowbar" id="shadowbar"></div></div>
+          <p id="sun-text"></p>
         </div>
         <div id="alerts"></div>
         <div id="nations"></div>
-        <label class="cycle">Season idea
-          <textarea id="season-note" rows="2" placeholder="What are you trying, and what do you think will happen later?"></textarea>
+        <label class="note-label">Season idea
+          <textarea id="season-note" rows="2" placeholder="What are you trying, and what might happen later?"></textarea>
         </label>
         <div class="actions">
           <button type="button" class="ghost" id="save-note">Save idea</button>
           <button type="button" class="primary" id="next-season">Next season</button>
         </div>
-        <button type="button" class="ghost" id="run-four" style="width:100%;margin-top:8px">Let 4 seasons pass</button>
+        <button type="button" class="ghost wide" id="run-four">Let 4 seasons pass</button>
       </aside>
     </div>
   </div>
 
-  <div id="science" class="modal" hidden>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="science-title">
+  <aside id="guide" class="guide" aria-live="polite">
+    <svg class="guide-art" viewBox="0 0 72 84" aria-hidden="true">
+      <ellipse cx="36" cy="78" rx="16" ry="4" fill="rgba(29,49,64,0.15)"/>
+      <path d="M22 48 h28 v16 a8 8 0 0 1-8 8 h-12 a8 8 0 0 1-8-8z" fill="#2f8f4e"/>
+      <circle cx="36" cy="34" r="16" fill="#f3c7a5"/>
+      <path d="M20 30 q16-22 32 0 v6 h-32z" fill="#e07a3d"/>
+      <circle cx="30" cy="34" r="2" fill="#1d3140"/>
+      <circle cx="42" cy="34" r="2" fill="#1d3140"/>
+      <path d="M31 40 q5 4 10 0" fill="none" stroke="#1d3140" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="46" y="44" width="14" height="10" rx="2" fill="#f2b705"/>
+    </svg>
+    <p id="guide-say">I'm Nimbus. I map climates for a living. Click the land, then let a season pass.</p>
+  </aside>
+
+  <div id="science" class="field-card" hidden>
+    <div class="sheet" role="dialog" aria-modal="false" aria-labelledby="science-title">
       <p class="standard" id="science-standard"></p>
       <h2 id="science-title"></h2>
       <p id="science-prompt"></p>
       <div id="science-choices" class="choices"></div>
       <label>Your sentence
-        <textarea id="science-reason" rows="3" placeholder="Say why in your own words."></textarea>
+        <textarea id="science-reason" rows="2" placeholder="Say why in your own words."></textarea>
       </label>
       <div class="actions">
+        <button type="button" class="ghost" id="science-skip">Skip for now</button>
         <button type="button" class="primary" id="science-save">Keep this in the notebook</button>
       </div>
       <p id="science-note" class="note" hidden></p>
     </div>
   </div>
 
-  <div id="mismatch" class="modal" hidden>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mismatch-title">
-      <p class="standard">A living thing and its biome</p>
+  <div id="mismatch" class="field-card" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="mismatch-title">
       <h2 id="mismatch-title">This place may not fit</h2>
       <p id="mismatch-text"></p>
-      <label>If you keep it, write why
-        <textarea id="mismatch-reason" rows="3"></textarea>
+      <label>Your reason
+        <textarea id="mismatch-reason" rows="2"></textarea>
       </label>
       <div class="actions">
         <button type="button" class="ghost" id="mismatch-move">Leave it off the map</button>
@@ -129,12 +146,12 @@
     </div>
   </div>
 
-  <div id="warn" class="modal" hidden>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="warn-title">
+  <div id="warn" class="field-card" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="warn-title">
       <h2 id="warn-title">A gentle flag</h2>
       <p id="warn-text"></p>
-      <label>Your plan
-        <textarea id="warn-reason" rows="3"></textarea>
+      <label>Your reason
+        <textarea id="warn-reason" rows="2"></textarea>
       </label>
       <div class="actions">
         <button type="button" class="ghost" id="warn-undo">Undo</button>
@@ -144,35 +161,36 @@
   </div>
 
   <div id="story" class="modal" hidden>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="story-title">
+    <div class="sheet wide-sheet" role="dialog" aria-modal="true" aria-labelledby="story-title">
       <h2 id="story-title">Why the numbers moved</h2>
       <div class="charts">
-        <canvas id="chart-life" width="640" height="200" aria-label="Living populations over seasons"></canvas>
-        <canvas id="chart-res" width="640" height="200" aria-label="Resources over seasons"></canvas>
+        <canvas id="chart-life" width="640" height="220" aria-label="Living populations over seasons"></canvas>
+        <canvas id="chart-res" width="640" height="220" aria-label="Resources over seasons"></canvas>
       </div>
       <p class="wind">Each line has its own scale, so a small population can still show a rise or a fall. The number is the latest season.</p>
-      <h3 style="margin:12px 0 6px">Season log</h3>
+      <h3>Season log</h3>
       <div id="log-list"></div>
       <div class="actions"><button type="button" class="ghost" id="story-close">Back to the map</button></div>
     </div>
   </div>
 
   <div id="notebook" class="modal" hidden>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="notebook-title">
+    <div class="sheet wide-sheet" role="dialog" aria-modal="true" aria-labelledby="notebook-title">
       <h2 id="notebook-title">Notebook for the teacher</h2>
       <p>This is a record of the world and your reasons. It does not assign a grade or add up a total.</p>
       <label>My idea for this world
         <textarea id="world-idea" rows="3"></textarea>
       </label>
       <div class="actions"><button type="button" class="ghost" id="save-idea">Save idea</button><button type="button" class="ghost" id="copy-evidence">Copy notes</button></div>
-      <h3 style="margin:12px 0 6px">Evidence</h3>
-      <textarea id="evidence-text" rows="16" readonly></textarea>
+      <h3>Evidence</h3>
+      <textarea id="evidence-text" rows="14" readonly></textarea>
       <div class="actions"><button type="button" class="ghost" id="notebook-close">Back to the map</button></div>
     </div>
   </div>
 
   <p id="toast" class="toast" hidden role="status"></p>
   <script src="js/sim.js"></script>
+  <script src="js/draw.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

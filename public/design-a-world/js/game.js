@@ -1,47 +1,44 @@
-/* Map, seasons, charts, and the teacher notebook. No grades. */
+/* HUD, tools, science cards, and the teacher notebook. No grades. */
 (function () {
   "use strict";
-  var SAVE = "daw-planet-v1";
+  var SAVE = "daw-planet-v2";
   var S = null;
   var tool = "look";
   var lifeId = "oak";
-  var selected = { c: 3, r: 6 };
+  var selected = { c: 7, r: 5 };
   var view = "biome";
   var choiceId = null;
   var mismatch = null;
   var toastTimer = 0;
+  var prevMeters = null;
+  var chartAnim = 0;
 
   var TOOLS = [
-    { id: "look", group: "Land", label: "Look", hint: "Read one cell" },
-    { id: "raise", group: "Land", label: "Raise land", hint: "Colder, more rain on the climb" },
-    { id: "lower", group: "Land", label: "Lower land", hint: "Water moves downhill" },
-    { id: "water", group: "Land", label: "Lake", hint: "Add or remove a lake" },
-    { id: "dam", group: "Land", label: "Dam", hint: "Hold water and sediment" },
-    { id: "clear", group: "Land", label: "Clear", hint: "Remove what people added" },
-    { id: "forest", group: "Life", label: "Plant a forest", hint: "Producers that can regrow" },
-    { id: "plant", group: "Life", label: "Place a plant", hint: "A named producer" },
-    { id: "animal", group: "Life", label: "Place an animal", hint: "A consumer or decomposer" },
-    { id: "pasture", group: "Life", label: "Pasture", hint: "Room for grazers" },
-    { id: "farm", group: "People", label: "Farm", hint: "Rural food" },
-    { id: "road", group: "People", label: "Road", hint: "Trade, and a split habitat" },
-    { id: "town", group: "People", label: "Town", hint: "Urban homes" },
-    { id: "suburb", group: "People", label: "Suburb", hint: "Houses and yards" },
-    { id: "mine", group: "People", label: "Mine", hint: "Coal or ore, if the rock has it" },
-    { id: "solar", group: "People", label: "Solar", hint: "Today's sunlight" },
-    { id: "capital", group: "People", label: "Move capital", hint: "Adapt by moving people" },
-    { id: "found", group: "People", label: "Found a nation", hint: "Up to three nations" }
+    { id: "look", label: "Look", hint: "Read one place" },
+    { id: "raise", label: "Raise", hint: "Colder, wetter climb" },
+    { id: "lower", label: "Lower", hint: "Water runs down" },
+    { id: "water", label: "Lake", hint: "Add or remove water" },
+    { id: "dam", label: "Dam", hint: "Hold water and mud" },
+    { id: "road", label: "Road", hint: "Trade, split habitat" },
+    { id: "farm", label: "Farm", hint: "Rural food" },
+    { id: "pasture", label: "Pasture", hint: "Room for grazers" },
+    { id: "forest", label: "Forest", hint: "Wood can regrow" },
+    { id: "plant", label: "Plant", hint: "A named producer" },
+    { id: "animal", label: "Animal", hint: "Consumer or decomposer" },
+    { id: "town", label: "Town", hint: "Urban homes" },
+    { id: "suburb", label: "Suburb", hint: "Houses and yards" },
+    { id: "mine", label: "Mine", hint: "Only where rock sparkles" },
+    { id: "solar", label: "Solar", hint: "Today's sunlight" },
+    { id: "capital", label: "Capital", hint: "Move the people" },
+    { id: "found", label: "Nation", hint: "Up to three" },
+    { id: "clear", label: "Clear", hint: "Remove what people added" }
   ];
-
-  var BIOME_COLOR = {
-    aquatic: "#1f7ea3", mountain: "#b7b1a6", tundra: "#d5e2e4", desert: "#e6c98a",
-    forest: "#2f7d45", grassland: "#c6b44a", wetland: "#6e9a62"
-  };
   var FLAG_COLORS = ["#1f6a4a", "#1f4d68", "#a1622f", "#e2b340", "#f4efe4", "#8d3b3b"];
   var SUNS = [
-    { id: "dawn", label: "Dawn", shadow: 70, stick: 28 },
-    { id: "noon", label: "Noon", shadow: 18, stick: 46 },
-    { id: "dusk", label: "Dusk", shadow: 70, stick: 28 },
-    { id: "night", label: "Night", shadow: 8, stick: 10 }
+    { id: "dawn", label: "Dawn", shadow: 54, stick: 22 },
+    { id: "noon", label: "Noon", shadow: 14, stick: 40 },
+    { id: "dusk", label: "Dusk", shadow: 54, stick: 22 },
+    { id: "night", label: "Night", shadow: 6, stick: 8 }
   ];
 
   function $(id) { return document.getElementById(id); }
@@ -54,6 +51,9 @@
     bind();
     var saved = readSave();
     $("continue").hidden = !saved;
+    WorldDraw.start($("world"), function () {
+      return { state: S, view: view, selected: selected, tool: tool };
+    });
   }
 
   function renderScenarios() {
@@ -72,41 +72,36 @@
 
   function renderTools() {
     var box = $("tool-list");
-    var last = "";
+    box.innerHTML = "";
     TOOLS.forEach(function (t) {
-      if (t.group !== last) {
-        var g = document.createElement("div");
-        g.className = "group";
-        g.innerHTML = "<p>" + t.group + "</p>";
-        g.id = "group-" + t.group;
-        box.appendChild(g);
-        last = t.group;
-      }
       var b = document.createElement("button");
       b.type = "button";
       b.className = "tool";
-      b.id = "tool-" + t.id;
       b.dataset.tool = t.id;
-      b.setAttribute("aria-pressed", t.id === tool ? "true" : "false");
-      b.innerHTML = "<span>" + esc(t.label) + "</span>";
       b.title = t.hint;
+      b.innerHTML = esc(t.label) + "<small>" + esc(t.hint) + "</small>";
       b.addEventListener("click", function () { setTool(t.id); });
-      $("group-" + t.group).appendChild(b);
+      box.appendChild(b);
     });
+    setTool("look");
   }
 
   function renderSunButtons() {
     var box = $("sun-buttons");
+    box.innerHTML = "";
     SUNS.forEach(function (s) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "mini";
+      b.className = "ghost";
       b.dataset.sun = s.id;
       b.textContent = s.label;
       b.addEventListener("click", function () {
         if (!S) return;
         WorldSim.apply(S, { tool: "sun", id: s.id });
-        paintSun();
+        say(s.id === "night"
+          ? "Night. Earth turned. The Sun did not race around us. Day comes back when we spin into the light."
+          : s.label + ". Earth is spinning, so the shadow on the stick changes.");
+        renderAll();
         save();
       });
       box.appendChild(b);
@@ -115,45 +110,53 @@
 
   function bind() {
     $("continue").addEventListener("click", function () {
-      var raw = readSave();
-      if (!raw) return;
-      S = raw;
-      WorldSim.refresh(S);
+      var saved = readSave();
+      if (!saved) return;
+      S = saved;
+      selected = (S.nations[0] && S.nations[0].capital) || { c: 4, r: 6 };
       openApp();
     });
     $("new-world").addEventListener("click", function () {
+      S = null;
       $("app").hidden = true;
       $("start").hidden = false;
+      $("science").hidden = true;
     });
     $("next-season").addEventListener("click", function () { advance(1); });
     $("run-four").addEventListener("click", function () { advance(4); });
     $("save-note").addEventListener("click", saveNote);
-    $("open-story").addEventListener("click", function () { openStory(); });
-    $("open-notebook").addEventListener("click", function () { openNotebook(); });
+    $("open-story").addEventListener("click", openStory);
+    $("open-notebook").addEventListener("click", openNotebook);
     $("story-close").addEventListener("click", function () { $("story").hidden = true; });
     $("notebook-close").addEventListener("click", function () { $("notebook").hidden = true; });
     $("science-save").addEventListener("click", saveScience);
+    $("science-skip").addEventListener("click", function () {
+      if (!S) return;
+      WorldSim.skipCheck(S);
+      $("science").hidden = true;
+      say("Skipped. The card is in the notebook as skipped. You can keep building.");
+      save();
+    });
     $("mismatch-move").addEventListener("click", function () { mismatch = null; $("mismatch").hidden = true; });
     $("mismatch-keep").addEventListener("click", keepMismatch);
     $("warn-undo").addEventListener("click", function () {
+      if (!S) return;
       var res = WorldSim.undo(S);
       $("warn").hidden = true;
-      toast(res.msg || "Undid that.");
-      renderAll();
-      save();
+      toast(res.msg || "Undid it.");
+      renderAll(); save();
     });
     $("warn-keep").addEventListener("click", function () {
-      WorldSim.justifyAlert(S, "plan-" + S.year + "-" + S.choices.length, $("warn-reason").value);
-      $("warn-reason").value = "";
+      if (S) WorldSim.justifyAlert(S, "warn", $("warn-reason").value);
       $("warn").hidden = true;
-      toast("Your reason is in the notebook.");
-      renderAll();
+      toast("Saved your reason in the notebook.");
       save();
     });
     $("save-idea").addEventListener("click", function () {
+      if (!S) return;
       WorldSim.apply(S, { tool: "worldidea", text: $("world-idea").value });
-      save();
       openNotebook();
+      save();
     });
     $("copy-evidence").addEventListener("click", copyEvidence);
     document.querySelectorAll("[data-view]").forEach(function (b) {
@@ -162,31 +165,44 @@
         document.querySelectorAll("[data-view]").forEach(function (x) {
           x.setAttribute("aria-pressed", x === b ? "true" : "false");
         });
-        paintMap();
+        WorldDraw.poke();
       });
+    });
+    var world = $("world");
+    world.addEventListener("click", function (ev) {
+      var hit = WorldDraw.cellAt(ev.clientX, ev.clientY);
+      if (hit) onCell(hit.c, hit.r);
+    });
+    world.addEventListener("keydown", function (ev) {
+      var d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+      if (!d || !S) return;
+      ev.preventDefault();
+      selected = {
+        c: Math.max(0, Math.min(15, selected.c + d[0])),
+        r: Math.max(0, Math.min(11, selected.r + d[1]))
+      };
+      if (ev.key === "Enter" || ev.key === " ") onCell(selected.c, selected.r);
+      else { paintInspector(); WorldDraw.poke(); }
     });
   }
 
   function begin(id) {
-    var name = $("student-name").value;
+    var opts = { name: $("student-name").value };
     var seedRaw = $("seed").value.trim();
-    var opts = { name: name };
     if (seedRaw) opts.seed = Number(seedRaw);
     S = WorldSim.create(id, opts);
-    selected = capitalOf(S) || { c: 4, r: 6 };
+    selected = (S.nations[0] && S.nations[0].capital) || { c: 4, r: 6 };
     openApp();
+    say("I'm Nimbus. This is " + scenario().name + ". " + scenario().blurb);
   }
 
   function openApp() {
     $("start").hidden = true;
     $("app").hidden = false;
     renderAll();
+    if (S.pending) openScience();
     save();
-  }
-
-  function capitalOf(state) {
-    if (!state.nations.length) return null;
-    return { c: state.nations[0].capital.c, r: state.nations[0].capital.r };
+    requestAnimationFrame(function () { WorldDraw.poke(); });
   }
 
   function setTool(id) {
@@ -198,66 +214,77 @@
     if (id === "plant" || id === "animal") {
       tray.hidden = false;
       tray.innerHTML = "";
-      WorldSim.ORGANISMS.filter(function (o) {
-        return id === "plant" ? o.kind === "plant" : o.kind === "animal";
-      }).forEach(function (o) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.setAttribute("aria-pressed", o.id === lifeId ? "true" : "false");
-        b.textContent = o.name + " · " + o.role;
-        b.addEventListener("click", function () {
-          lifeId = o.id;
-          setTool(id);
+      WorldSim.ORGANISMS.filter(function (o) { return id === "plant" ? o.kind === "plant" : o.kind === "animal"; })
+        .forEach(function (o) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.setAttribute("aria-pressed", o.id === lifeId ? "true" : "false");
+          b.textContent = o.name;
+          b.title = o.role + ". " + o.structure;
+          b.addEventListener("click", function () { lifeId = o.id; setTool(id); });
+          tray.appendChild(b);
         });
-        tray.appendChild(b);
-      });
     } else tray.hidden = true;
+    if (id === "mine") say("Gold dots are coal. Copper dots are ore. An empty hill has nothing to mine.");
+    WorldDraw.poke();
   }
 
   function advance(n) {
     if (!S) return;
-    if (S.pending) { openScience(); return; }
-    var last = null;
-    for (var i = 0; i < n; i++) {
-      last = WorldSim.step(S);
-      if (last.blocked || S.pending) break;
-    }
+    var before = WorldSim.totals(S);
+    var logAt = S.log.length;
+    var herbBefore = S.herb;
+    for (var i = 0; i < n; i++) WorldSim.step(S);
     renderAll();
     save();
+    var fresh = S.log.slice(logAt);
+    if (fresh.length) {
+      var last = fresh[fresh.length - 1].text;
+      toast(last.slice(0, 160));
+      say(guideLine(fresh));
+    }
+    if (S.herb < herbBefore * 0.75 || fresh.some(function (l) { return /shrank|flew off|lost people|dropped/i.test(l.text); })) {
+      WorldDraw.shake();
+    }
     if (S.pending) openScience();
-    else if (S.log.length) toast(S.log[S.log.length - 1].text.slice(0, 180));
+    bumpMeters(before, WorldSim.totals(S));
   }
 
   function onCell(c, r) {
     selected = { c: c, r: r };
-    if (tool === "look") {
-      renderAll();
-      return;
-    }
+    if (!S) return;
+    if (tool === "look") { paintInspector(); WorldDraw.poke(); return; }
     var action = { tool: tool, c: c, r: r };
     if (tool === "plant" || tool === "animal") action = { tool: "life", c: c, r: r, id: lifeId };
-    if (tool === "capital") {
-      var nation = S.view.owner[r * WorldSim.COLS + c] || (S.nations[0] && S.nations[0].id);
-      action.nationId = nation;
-    }
+    if (tool === "capital") action.nationId = S.view.owner[r * 16 + c] || (S.nations[0] && S.nations[0].id);
     if (tool === "found") action.name = "New Nation";
+    var before = WorldSim.totals(S);
     var res = WorldSim.apply(S, action);
     if (res.mismatch) {
       mismatch = res.mismatch;
       $("mismatch-text").textContent = res.mismatch.text;
       $("mismatch-reason").value = "";
       $("mismatch").hidden = false;
+      say(res.mismatch.text.slice(0, 180));
       renderAll();
       return;
     }
-    if (!res.ok) { toast(res.msg || "That did not work."); renderAll(); return; }
+    if (!res.ok) {
+      toast(res.msg || "That did not work.");
+      say(res.empty ? "Nothing in that rock. Coal and ore are only in some layers. Follow the sparkle." : (res.msg || "").slice(0, 160));
+      renderAll();
+      return;
+    }
     toast(res.msg);
+    say((res.msg || "").slice(0, 180));
+    WorldDraw.burst(c, r, tool === "mine" ? "#5c5146" : tool === "water" ? "#3ec0d8" : "#f2b705");
     if (res.warn) {
       $("warn-text").textContent = res.warn.text;
       $("warn-reason").value = "";
       $("warn").hidden = false;
     }
     renderAll();
+    bumpMeters(before, WorldSim.totals(S));
     save();
   }
 
@@ -279,15 +306,13 @@
     $("coal").textContent = r1(t.coal);
     $("ore").textContent = r1(t.ore);
     $("co2").textContent = t.co2.toFixed(1);
-    paintMap();
-    paintLegend();
     paintInspector();
-    paintCycle();
     paintGoals();
     paintNations();
     paintAlerts();
     paintSun();
-    $("next-season").disabled = !!S.pending;
+    paintGlobe();
+    WorldDraw.poke();
   }
 
   function scenario() {
@@ -296,105 +321,16 @@
     return found;
   }
 
-  function paintMap() {
-    var map = $("map");
-    map.innerHTML = "";
-    var corner = document.createElement("div");
-    map.appendChild(corner);
-    for (var c = 0; c < WorldSim.COLS; c++) {
-      var h = document.createElement("div");
-      h.className = "colh";
-      h.textContent = String(c);
-      map.appendChild(h);
-    }
-    for (var r = 0; r < WorldSim.ROWS; r++) {
-      var lat = document.createElement("div");
-      lat.className = "lat";
-      lat.textContent = r === 0 ? "N" : r === WorldSim.ROWS - 1 ? "S" : "";
-      map.appendChild(lat);
-      for (var x = 0; x < WorldSim.COLS; x++) {
-        map.appendChild(cellButton(x, r));
-      }
-    }
-  }
-
-  function cellButton(c, r) {
-    var i = r * WorldSim.COLS + c;
-    var cell = S.cells[i];
-    var biome = S.view.biome[i];
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "cell biome-" + biome + " elev-" + Math.round(cell.e);
-    b.dataset.c = String(c);
-    b.dataset.r = String(r);
-    b.style.filter = "brightness(" + (1.12 - cell.e * 0.07) + ")";
-    if (view !== "biome") {
-      var rain = view === "weather" ? S.view.rain[i] : S.view.climR[i];
-      b.style.background = rainColor(rain);
-      b.style.backgroundImage = "none";
-    }
-    if (S.view.river[i]) b.classList.add("river");
-    if (cell.dam) b.classList.add("dam");
-    if (cell.road) b.classList.add("road");
-    if (cell.lf) b.classList.add("lf-" + cell.lf);
-    if (selected && selected.c === c && selected.r === r) b.classList.add("selected");
-    var mark = useMark(cell);
-    var lf = cell.lf ? WorldSim.lfName(cell.lf).slice(0, 1).toUpperCase() : "";
-    b.innerHTML = "<span class='el'>" + Math.round(cell.e) + (lf ? " " + lf : "") + "</span>" + (mark ? "<span class='use'>" + mark + "</span>" : "");
-    var temp = r1(view === "weather" ? S.view.temp[i] : S.view.climT[i]);
-    b.setAttribute("aria-label", "Column " + c + " row " + r + ", " + biome + ", " + temp + " degrees");
-    b.addEventListener("click", function () { onCell(c, r); });
-    return b;
-  }
-
-  function useMark(cell) {
-    var map = { farm: "Fa", pasture: "Pa", forest: "Fo", town: "To", suburb: "Su", mine: "Mi", solar: "So" };
-    if (cell.life.length) return cell.life.length > 1 ? "++" : lifeMark(cell.life[0].id);
-    return map[cell.use] || "";
-  }
-  function lifeMark(id) {
-    var short = { cactus: "Ca", grass: "Gr", oak: "Oa", lichen: "Li", cattail: "Ct", kelp: "Ke", pine: "Pi", jackrabbit: "Ja", bison: "Bi", wolf: "Wo", polar: "Po", heron: "He", bass: "Ba", goat: "Go", fungus: "Fu", dragon: "Dr" };
-    return short[id] || "·";
-  }
-
-  function rainColor(rain) {
-    var t = Math.max(0, Math.min(1, rain / 48));
-    var a = [230, 201, 138];
-    var b = [31, 110, 150];
-    var c = a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); });
-    return "rgb(" + c.join(",") + ")";
-  }
-
-  function paintLegend() {
-    var box = $("legend");
-    var names = ["aquatic", "wetland", "forest", "grassland", "desert", "tundra", "mountain"];
-    box.innerHTML = names.map(function (n) {
-      return "<span><i class='swatch' style='background:" + BIOME_COLOR[n] + "'></i>" + n + "</span>";
-    }).join("") + "<span>Letters: Fa farm, Pa pasture, To town, Mi mine, Dr dragon. Landform initial sits by the elevation.</span>";
-  }
-
   function paintInspector() {
     var ex = WorldSim.explainCell(S, selected.c, selected.r);
-    $("readout").textContent = ex.paragraphs.join(" ");
+    $("readout").textContent = ex.paragraphs.slice(0, 2).join(" ");
     WorldSim.markTerms(S, ex.defs);
   }
 
-  function paintCycle() {
-    var v = S.view;
-    $("cycle-text").textContent =
-      "The Sun evaporated about " + r1(v.evap) + " units. Land rain this season is about " + r1(v.rainSum) +
-      ". About " + r1(v.toOcean) + " ran toward the ocean. Dams hold about " + r1(v.stored) +
-      ". Producer energy is " + r1(S.plants) + ". Herbivores " + r1(S.herb) + " eat plants. Carnivores " + r1(S.carn) +
-      " eat herbivores. Fish " + r1(S.fish) + " live in the water. Decomposers returned about " + r1(S.decomp) +
-      " nutrient units toward the soil. Only about a tenth of the energy at one level reaches the next. Weather now: " +
-      S.weather.name + ".";
-  }
-
   function paintGoals() {
-    var box = $("goals");
-    var facts = WorldSim.goalFacts(S);
-    box.innerHTML = scenario().goals.map(function (g) { return "<p>" + esc(g) + "</p>"; }).join("") +
-      facts.map(function (f) { return "<p><b>" + esc(f.text) + ".</b> " + esc(f.fact) + "</p>"; }).join("");
+    $("goals").innerHTML = scenario().goals.slice(0, 2).map(function (g) {
+      return "<p>" + esc(g) + "</p>";
+    }).join("");
   }
 
   function paintAlerts() {
@@ -410,13 +346,12 @@
       reason.placeholder = "Why could they still live here?";
       var keep = document.createElement("button");
       keep.type = "button";
-      keep.className = "mini";
+      keep.className = "ghost";
       keep.textContent = "Save this reason";
       keep.addEventListener("click", function () {
         WorldSim.justifyAlert(S, a.id, reason.value);
         toast("Saved. Your teacher can read it in the notebook.");
-        renderAll();
-        save();
+        renderAll(); save();
       });
       div.appendChild(reason);
       div.appendChild(keep);
@@ -426,55 +361,58 @@
 
   function paintNations() {
     var box = $("nations");
-    box.innerHTML = "";
     S.nations.forEach(function (n) {
-      var div = document.createElement("div");
-      div.className = "nation";
-      div.innerHTML = flagSvg(n.flag) + "<strong>" + esc(n.name) + "</strong><span>" +
-        esc(WorldSim.govLabel(n.gov)) + " · " + esc(n.pattern || "settlement") +
-        " · people " + r1(n.people) + ", food " + r1(n.food) + ", goods " + r1(n.goods) +
-        "</span><span>Rural " + (n.rural || 0) + " · urban " + (n.urban || 0) + " · suburban " + (n.suburban || 0) +
-        ". Capital (" + n.capital.c + ", " + n.capital.r + ").</span>";
-      var name = document.createElement("input");
-      name.value = n.name;
-      name.maxLength = 22;
-      name.setAttribute("aria-label", "Nation name");
-      name.addEventListener("change", function () {
-        WorldSim.apply(S, { tool: "rename", nationId: n.id, name: name.value });
-        renderAll(); save();
-      });
-      var gov = document.createElement("select");
-      gov.setAttribute("aria-label", "Government");
-      [["council", "Town council"], ["republic", "Elected representatives"], ["elders", "Elders"], ["monarch", "Single leader"]].forEach(function (pair) {
-        var o = document.createElement("option");
-        o.value = pair[0]; o.textContent = pair[1];
-        if (n.gov === pair[0]) o.selected = true;
-        gov.appendChild(o);
-      });
-      gov.addEventListener("change", function () {
-        var res = WorldSim.apply(S, { tool: "gov", nationId: n.id, gov: gov.value });
-        toast(res.msg || "Government updated.");
-        renderAll(); save();
-      });
-      var colors = document.createElement("div");
-      colors.className = "colors";
-      FLAG_COLORS.forEach(function (col) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.style.background = col;
-        b.setAttribute("aria-label", "Flag color " + col);
-        b.addEventListener("click", function () {
-          var flag = { layout: n.flag.layout, a: col, b: n.flag.b };
-          if (n.flag.a === col) flag = { layout: n.flag.layout, a: n.flag.a, b: col };
-          WorldSim.apply(S, { tool: "flag", nationId: n.id, flag: flag });
+      var div = document.getElementById("nation-" + n.id);
+      if (!div) {
+        div = document.createElement("div");
+        div.id = "nation-" + n.id;
+        div.className = "nation";
+        div.innerHTML = "<span class='flag-slot'></span><strong></strong><span class='meta'></span>";
+        var name = document.createElement("input");
+        name.maxLength = 22;
+        name.setAttribute("aria-label", "Nation name");
+        name.addEventListener("change", function () {
+          WorldSim.apply(S, { tool: "rename", nationId: n.id, name: name.value });
           renderAll(); save();
         });
-        colors.appendChild(b);
-      });
-      div.appendChild(name);
-      div.appendChild(gov);
-      div.appendChild(colors);
-      box.appendChild(div);
+        var gov = document.createElement("select");
+        gov.setAttribute("aria-label", "Government");
+        [["council", "Town council"], ["republic", "Elected leaders"], ["elders", "Elders"], ["monarch", "One leader"]].forEach(function (pair) {
+          var o = document.createElement("option");
+          o.value = pair[0]; o.textContent = pair[1];
+          gov.appendChild(o);
+        });
+        gov.addEventListener("change", function () {
+          var res = WorldSim.apply(S, { tool: "gov", nationId: n.id, gov: gov.value });
+          toast(res.msg || "Government updated.");
+          renderAll(); save();
+        });
+        var colors = document.createElement("div");
+        colors.className = "colors";
+        FLAG_COLORS.forEach(function (col) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.style.background = col;
+          b.title = "Flag color";
+          b.addEventListener("click", function () {
+            var flag = { layout: n.flag.layout, a: col, b: n.flag.b };
+            if (n.flag.a === col) flag = { layout: n.flag.layout, a: n.flag.a, b: col };
+            WorldSim.apply(S, { tool: "flag", nationId: n.id, flag: flag });
+            renderAll(); save();
+          });
+          colors.appendChild(b);
+        });
+        div.appendChild(name);
+        div.appendChild(gov);
+        div.appendChild(colors);
+        box.appendChild(div);
+      }
+      div.querySelector(".flag-slot").innerHTML = flagSvg(n.flag);
+      div.querySelector("strong").textContent = n.name;
+      div.querySelector(".meta").textContent = r1(n.people) + " people · food " + r1(n.food) + " · " + (n.pattern || "settling");
+      var input = div.querySelector("input");
+      if (document.activeElement !== input) input.value = n.name;
+      div.querySelector("select").value = n.gov;
     });
   }
 
@@ -494,16 +432,25 @@
     $("stick").style.height = sun.stick + "px";
     $("shadowbar").style.width = sun.shadow + "px";
     $("sun-text").textContent = sun.id === "night"
-      ? "Night. This side of Earth has turned away from the Sun. Earth rotates once about every 24 hours, so day comes back."
-      : sun.label + ". The Sun stays put. Earth is spinning, so the light hits the stick at a new angle and the shadow changes.";
+      ? "Night. This side of Earth has turned away from the Sun."
+      : sun.label + ". Earth spins. The Sun stays put.";
     document.querySelectorAll("[data-sun]").forEach(function (b) {
       b.setAttribute("aria-pressed", b.dataset.sun === S.sun ? "true" : "false");
     });
   }
 
+  function paintGlobe() {
+    var night = $("globe") && $("globe").querySelector(".globe-night");
+    if (!night) return;
+    var width = { dawn: "30%", noon: "0%", dusk: "55%", night: "100%" }[S.sun] || "0%";
+    night.style.width = width;
+  }
+
   function openScience() {
     var p = S.pending;
     if (!p) { $("science").hidden = true; return; }
+    if ($("science").dataset.id === p.id && !$("science").hidden) return;
+    $("science").dataset.id = p.id;
     choiceId = null;
     $("science-standard").textContent = p.standard;
     $("science-title").textContent = p.title;
@@ -526,6 +473,7 @@
       box.appendChild(b);
     });
     $("science").hidden = false;
+    say("A field card is open. Answer it if you want. The seasons will not wait.");
   }
 
   function saveScience() {
@@ -537,7 +485,8 @@
     choiceId = null;
     renderAll();
     save();
-    setTimeout(function () { $("science").hidden = true; }, 900);
+    say("Saved in the notebook. Here is the science idea: " + (res.note || "").slice(0, 140));
+    setTimeout(function () { $("science").hidden = true; }, 1600);
   }
 
   function keepMismatch() {
@@ -546,72 +495,81 @@
     mismatch = null;
     $("mismatch").hidden = true;
     toast(res.msg || "Saved.");
+    say("I saved your reason. The animal will still struggle if the climate does not fit.");
     renderAll();
     save();
   }
 
   function openStory() {
     $("story").hidden = false;
-    drawChart($("chart-life"), [
-      { key: "plants", color: "#2d6a4f", name: "Producers" },
-      { key: "herb", color: "#c8922a", name: "Herbivores" },
-      { key: "carn", color: "#8d3b3b", name: "Carnivores" },
-      { key: "fish", color: "#1f7ea3", name: "Fish" },
-      { key: "people", color: "#1c2834", name: "People" }
-    ]);
-    drawChart($("chart-res"), [
-      { key: "timber", color: "#2d6a4f", name: "Wood" },
-      { key: "water", color: "#1f7ea3", name: "Fresh water" },
-      { key: "coal", color: "#5c5146", name: "Coal" },
-      { key: "ore", color: "#a1622f", name: "Ore" },
-      { key: "soil", color: "#c6b44a", name: "Soil" }
-    ]);
+    chartAnim = 0;
+    drawChartsAnimated();
     var lines = S.log.slice().reverse().map(function (entry) {
       return "Season " + entry.year + " — " + entry.text;
     });
     $("log-list").textContent = lines.join("\n\n");
   }
 
-  function drawChart(canvas, series) {
-    var dpr = window.devicePixelRatio || 1;
+  function drawChartsAnimated() {
+    chartAnim = Math.min(1, chartAnim + 0.08);
+    drawChart($("chart-life"), [
+      { key: "plants", color: "#2f8f4e", name: "Plants" },
+      { key: "herb", color: "#e07a3d", name: "Grazers" },
+      { key: "carn", color: "#c4473a", name: "Hunters" },
+      { key: "fish", color: "#1b6f8a", name: "Fish" },
+      { key: "people", color: "#1d3140", name: "People" }
+    ], chartAnim);
+    drawChart($("chart-res"), [
+      { key: "timber", color: "#2f8f4e", name: "Wood" },
+      { key: "water", color: "#1b6f8a", name: "Water" },
+      { key: "coal", color: "#5c5146", name: "Coal" },
+      { key: "ore", color: "#a1622f", name: "Ore" },
+      { key: "co2", color: "#e07a3d", name: "Heat" }
+    ], chartAnim);
+    if (chartAnim < 1 && !$("story").hidden) requestAnimationFrame(drawChartsAnimated);
+  }
+
+  function drawChart(canvas, series, anim) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
     var w = canvas.clientWidth || 360;
     var h = 200;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.floor(h * dpr);
     var ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#fffdf8";
     ctx.fillRect(0, 0, w, h);
-    var rows = S.history;
+    var rows = S.history || [];
     var left = 8, right = 8, top = 8, bottom = 36;
-    ctx.strokeStyle = "#e4dccb";
+    ctx.strokeStyle = "#e4d3b4";
     ctx.beginPath();
     ctx.moveTo(left, top);
     ctx.lineTo(left, h - bottom);
     ctx.lineTo(w - right, h - bottom);
     ctx.stroke();
+    var shown = Math.max(1, Math.round(rows.length * (anim || 1)));
     series.forEach(function (s) {
       var smax = 1;
       rows.forEach(function (row) { if (row[s.key] > smax) smax = row[s.key]; });
       ctx.beginPath();
-      rows.forEach(function (row, i) {
-        var x = left + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (w - left - right));
-        var y = (h - bottom) - (row[s.key] / smax) * (h - top - bottom);
+      for (var i = 0; i < shown; i++) {
+        var x = left + (rows.length <= 1 ? 0 : (i / (rows.length - 1)) * (w - left - right));
+        var y = (h - bottom) - ((rows[i][s.key] || 0) / smax) * (h - top - bottom);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
+      }
       ctx.strokeStyle = s.color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.stroke();
     });
-    ctx.font = "11px sans-serif";
+    ctx.font = "12px sans-serif";
     var lx = left;
     series.forEach(function (s) {
-      var last = rows.length ? Math.round(rows[rows.length - 1][s.key]) : 0;
+      var last = rows.length ? Math.round(rows[rows.length - 1][s.key] || 0) : 0;
       var label = s.name + " " + last;
+      if (lx > w - 70) return;
       ctx.fillStyle = s.color;
-      ctx.fillText(label, lx, h - 10);
-      lx += ctx.measureText(label).width + 12;
+      ctx.fillText(label, lx, h - 12);
+      lx += ctx.measureText(label).width + 10;
     });
   }
 
@@ -635,11 +593,44 @@
 
   function saveNote() {
     var text = $("season-note").value.trim();
-    if (!text) { toast("Write a sentence first, if you want it saved."); return; }
+    if (!text || !S) { toast("Write a sentence first, if you want it saved."); return; }
     WorldSim.apply(S, { tool: "note", text: text });
     $("season-note").value = "";
     toast("Saved with season " + S.year + ".");
     save();
+  }
+
+  function bumpMeters(before, after) {
+    var map = { plants: "plants", herb: "herbivores", carn: "carnivores", fish: "fish", people: "people", coal: "coal", ore: "ore", co2: "co2" };
+    Object.keys(map).forEach(function (k) {
+      var el = $(map[k]);
+      if (!el) return;
+      var li = el.parentNode;
+      li.classList.remove("up", "down");
+      if (after[k] > before[k] + 0.2) li.classList.add("up");
+      if (after[k] < before[k] - 0.2) li.classList.add("down");
+    });
+    prevMeters = after;
+  }
+
+  function guideLine(entries) {
+    var text = entries.map(function (e) { return e.text; }).join(" ");
+    if (/Herbivores dropped/i.test(text)) return "The grazers ran short of plants. Sunlight was not enough to feed that many. That is the food web, from the bottom up.";
+    if (/delta at/i.test(text) && /shrank/i.test(text)) return "The delta shrank. The dam held the mud upstream. Farms may like the stored water. The river mouth does not.";
+    if (/coal/i.test(text)) return "Coal left the ground and the heat index moved. Wood can grow back. Coal cannot.";
+    if (/lost people/i.test(text)) return "Some people moved away because food ran low. Nobody is hurt. Farms, fish, and trade can bring them back.";
+    if (/valley|canyon|delta|dune|glacier/i.test(text)) return entries[0].text.slice(0, 170);
+    return entries[entries.length - 1].text.slice(0, 170);
+  }
+
+  function say(text) {
+    var el = $("guide-say");
+    if (!el) return;
+    el.textContent = text;
+    var box = $("guide");
+    box.classList.remove("react");
+    void box.offsetWidth;
+    box.classList.add("react");
   }
 
   function toast(msg) {
@@ -655,7 +646,7 @@
   }
   function readSave() {
     try {
-      var raw = localStorage.getItem(SAVE);
+      var raw = localStorage.getItem(SAVE) || localStorage.getItem("daw-planet-v1");
       if (!raw) return null;
       var data = JSON.parse(raw);
       if (!data || !data.cells) return null;
