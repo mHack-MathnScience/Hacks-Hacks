@@ -34,7 +34,12 @@
         <div><b>Design a World</b><small id="who">Explorer</small></div>
       </div>
       <div id="season-label">Season 0</div>
+      <div class="views" role="group" aria-label="Planet view">
+        <button type="button" data-mode="globe" aria-pressed="true">Globe</button>
+        <button type="button" data-mode="region" aria-pressed="false">Region</button>
+      </div>
       <div class="top-actions">
+        <button type="button" id="gfx-toggle" aria-pressed="false">Low graphics</button>
         <button type="button" id="open-story">Charts and log</button>
         <button type="button" id="open-notebook">Notebook</button>
         <button type="button" id="new-world">New world</button>
@@ -45,23 +50,43 @@
         <h2>Tools</h2>
         <div id="tool-list"></div>
         <div id="tray" class="tray" hidden></div>
+        <aside id="guide" class="guide" aria-live="polite">
+          <svg class="guide-art" viewBox="0 0 72 84" aria-hidden="true">
+            <ellipse cx="36" cy="78" rx="16" ry="4" fill="rgba(180,210,255,0.25)"/>
+            <path d="M22 48 h28 v16 a8 8 0 0 1-8 8 h-12 a8 8 0 0 1-8-8z" fill="#2f8f4e"/>
+            <circle cx="36" cy="34" r="16" fill="#f3c7a5"/>
+            <path d="M20 30 q16-22 32 0 v6 h-32z" fill="#e07a3d"/>
+            <circle cx="30" cy="34" r="2" fill="#1d3140"/>
+            <circle cx="42" cy="34" r="2" fill="#1d3140"/>
+            <path d="M31 40 q5 4 10 0" fill="none" stroke="#1d3140" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="46" y="44" width="14" height="10" rx="2" fill="#f2b705"/>
+          </svg>
+          <p id="guide-say">I'm Nimbus. Drag the globe. Planet tools change the climate slowly.</p>
+        </aside>
       </aside>
       <section class="stage">
         <div class="mapbar">
-          <div class="views" role="group" aria-label="Map view">
+          <div class="views" role="group" aria-label="Map layer">
             <button type="button" data-view="biome" aria-pressed="true">Biomes</button>
             <button type="button" data-view="climate" aria-pressed="false">Climate rain</button>
             <button type="button" data-view="weather" aria-pressed="false">This season</button>
           </div>
-          <p class="wind">Wind blows west to east. North is up. The gold line is sunlight feeding the web.</p>
+          <p class="wind" id="wind-note">Drag to spin. The bright edge is day. City lights show on the night side.</p>
         </div>
         <div class="world-frame">
-          <canvas id="world" tabindex="0" aria-label="Planet map. Click a place to use the selected tool."></canvas>
+          <canvas id="globe-view" tabindex="0" aria-label="Spinning planet. Drag to turn it. Switch to Region to edit one place."></canvas>
+          <canvas id="world" hidden tabindex="0" aria-label="Region map. Click a place to use the selected tool."></canvas>
         </div>
-        <p id="readout" class="readout" aria-live="polite">Choose a tool, then a place on the map.</p>
+        <p id="readout" class="readout" aria-live="polite">Choose a tool, then a place on the region map.</p>
       </section>
       <aside class="side" aria-label="Season report">
         <h2 id="scenario-name">World</h2>
+        <div class="thermo" id="thermo">
+          <p class="thermo-kicker">Climate feel</p>
+          <div class="thermo-track" aria-hidden="true"><div id="thermo-fill"></div></div>
+          <div class="thermo-scale" aria-hidden="true"><span>Ice Age</span><span>Cool</span><span>Cozy</span><span>Hot</span><span>Scorching</span></div>
+          <p class="thermo-read"><b id="co2">Cozy</b> <span id="feel-read">—</span></p>
+        </div>
         <div class="web" aria-label="Energy from the Sun">
           <div class="sun-orb" aria-hidden="true"></div>
           <svg class="beam" viewBox="0 0 240 36" aria-hidden="true">
@@ -79,7 +104,6 @@
           <li class="meter" data-meter="water">Water <b id="water">0</b></li>
           <li class="meter" data-meter="coal">Coal <b id="coal">0</b></li>
           <li class="meter" data-meter="ore">Ore <b id="ore">0</b></li>
-          <li class="meter" data-meter="co2">Heat <b id="co2">0</b></li>
         </ul>
         <div class="goals"><div id="goals"></div></div>
         <div class="dial">
@@ -100,20 +124,6 @@
       </aside>
     </div>
   </div>
-
-  <aside id="guide" class="guide" aria-live="polite">
-    <svg class="guide-art" viewBox="0 0 72 84" aria-hidden="true">
-      <ellipse cx="36" cy="78" rx="16" ry="4" fill="rgba(29,49,64,0.15)"/>
-      <path d="M22 48 h28 v16 a8 8 0 0 1-8 8 h-12 a8 8 0 0 1-8-8z" fill="#2f8f4e"/>
-      <circle cx="36" cy="34" r="16" fill="#f3c7a5"/>
-      <path d="M20 30 q16-22 32 0 v6 h-32z" fill="#e07a3d"/>
-      <circle cx="30" cy="34" r="2" fill="#1d3140"/>
-      <circle cx="42" cy="34" r="2" fill="#1d3140"/>
-      <path d="M31 40 q5 4 10 0" fill="none" stroke="#1d3140" stroke-width="1.5" stroke-linecap="round"/>
-      <rect x="46" y="44" width="14" height="10" rx="2" fill="#f2b705"/>
-    </svg>
-    <p id="guide-say">I'm Nimbus. I map climates for a living. Click the land, then let a season pass.</p>
-  </aside>
 
   <div id="science" class="field-card" hidden>
     <div class="sheet" role="dialog" aria-modal="false" aria-labelledby="science-title">
@@ -191,6 +201,7 @@
   <p id="toast" class="toast" hidden role="status"></p>
   <script src="js/sim.js"></script>
   <script src="js/draw.js"></script>
+  <script src="js/globe.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

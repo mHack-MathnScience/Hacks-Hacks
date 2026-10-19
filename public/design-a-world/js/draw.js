@@ -32,7 +32,7 @@
 
   function frame(ts) {
     requestAnimationFrame(frame);
-    if (!canvas || !getter) return;
+    if (!canvas || !getter || canvas.hidden) return;
     var pack = getter();
     if (!pack || !pack.state) return;
     var m = measure();
@@ -161,21 +161,21 @@
         var fx = x / m.cell;
         var c0 = Math.max(0, Math.min(15, fx | 0));
         var fxf = fx - c0;
+        var c1 = Math.min(15, c0 + 1);
+        var r1 = Math.min(11, r0 + 1);
+        var ca = cols[r0 * 16 + c0];
+        var cb = cols[r0 * 16 + c1];
+        var cc = cols[r1 * 16 + c0];
+        var cd = cols[r1 * 16 + c1];
+        var col = [
+          (ca[0] * (1 - fxf) + cb[0] * fxf) * (1 - fyf) + (cc[0] * (1 - fxf) + cd[0] * fxf) * fyf,
+          (ca[1] * (1 - fxf) + cb[1] * fxf) * (1 - fyf) + (cc[1] * (1 - fxf) + cd[1] * fxf) * fyf,
+          (ca[2] * (1 - fxf) + cb[2] * fxf) * (1 - fyf) + (cc[2] * (1 - fxf) + cd[2] * fxf) * fyf
+        ];
         var i0 = r0 * 16 + c0;
-        var col = cols[i0];
         var iL = r0 * 16 + Math.max(0, c0 - 1);
         var iU = Math.max(0, r0 - 1) * 16 + c0;
-        var shade = (elev[i0] - elev[iL]) * 26 + (elev[i0] - elev[iU]) * 16;
-        if (fxf > 0.55 && c0 < 15) {
-          var t = (fxf - 0.55) / 0.9;
-          var o = cols[i0 + 1];
-          col = [col[0] * (1 - t) + o[0] * t, col[1] * (1 - t) + o[1] * t, col[2] * (1 - t) + o[2] * t];
-        }
-        if (fyf > 0.55 && r0 < 11) {
-          var u = (fyf - 0.55) / 0.9;
-          var q = cols[i0 + 16];
-          col = [col[0] * (1 - u) + q[0] * u, col[1] * (1 - u) + q[1] * u, col[2] * (1 - u) + q[2] * u];
-        }
+        var shade = (elev[i0] - elev[iL]) * 22 + (elev[i0] - elev[iU]) * 14;
         var n = (hash(x, y, 2) - 0.5) * 26;
         var p = (y * w + x) * 4;
         data[p] = clampByte(col[0] + shade + n);
@@ -194,8 +194,8 @@
         var x = m.ox + c * m.cell;
         var y0 = m.oy + r * m.cell;
         var biome = s.view.biome[idx];
-        if (biome === "forest") drawTree(ctx, x + m.cell * 0.35, y0 + m.cell * 0.72, m.cell * 0.28);
-        if (biome === "forest" && hash(c, r, 4) > 0.4) drawTree(ctx, x + m.cell * 0.68, y0 + m.cell * 0.6, m.cell * 0.22);
+        if (biome === "forest") drawTree(ctx, x + m.cell * 0.32, y0 + m.cell * 0.78, m.cell * 0.46);
+        if (biome === "forest" && hash(c, r, 4) > 0.4) drawTree(ctx, x + m.cell * 0.7, y0 + m.cell * 0.62, m.cell * 0.34);
         if (biome === "mountain" && (cell.e >= 3.6 || s.view.climT[idx] < 1)) {
           ctx.fillStyle = "rgba(255,255,255,0.72)";
           ctx.beginPath();
@@ -337,7 +337,9 @@
         ctx.fillRect(x + 2, y + 2, m.cell - 4, m.cell - 4);
       }
       cell.life.forEach(function (life, k) {
-        drawLife(ctx, life.id, x + m.cell * (0.28 + k * 0.22), y + m.cell * 0.62, m.cell * 0.34, time + k);
+        var hop = Math.sin(time * 3 + k) * m.cell * 0.06;
+        var step = Math.sin(time * 1.6 + k * 2) * m.cell * 0.08;
+        drawLife(ctx, life.id, x + m.cell * (0.28 + k * 0.2) + step, y + m.cell * 0.7 + hop, m.cell * 0.55, time + k);
       });
     }
     s.nations.forEach(function (n) {
@@ -360,8 +362,9 @@
       if (b !== "grassland" && b !== "forest") continue;
       if (hash(i % 16, (i / 16) | 0, 9) > 0.72) continue;
       var c = i % 16, r = (i / 16) | 0;
-      var bob = Math.sin(time * 3 + i) * (m.cell * 0.04);
-      drawLife(ctx, placed % 2 ? "jackrabbit" : "bison", m.ox + (c + 0.55) * m.cell, m.oy + (r + 0.7) * m.cell + bob, m.cell * 0.28, time);
+      var bob = Math.sin(time * 3 + i) * (m.cell * 0.06);
+      var walk = Math.sin(time * 1.4 + i) * m.cell * 0.1;
+      drawLife(ctx, placed % 2 ? "jackrabbit" : "bison", m.ox + (c + 0.55) * m.cell + walk, m.oy + (r + 0.72) * m.cell + bob, m.cell * 0.48, time);
       placed++;
     }
   }

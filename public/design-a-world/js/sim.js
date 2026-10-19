@@ -212,6 +212,7 @@
       coal: 0, ore: 0, soil: 74, moist: 48, pol: 0,
       cut: 0, sed: 0, lf: "", rock: false,
       dry: 0, cold: 0, warm: 0, starve: 0, life: [],
+      volcano: 0, flood: false,
       e0: p && p.e != null ? p.e : 1,
     };
   }
@@ -425,10 +426,15 @@
       lastLf: null,
       lastCheckYear: 0,
       warmed: 0,
+      planet: defaultPlanet(),
+      feel: null,
+      sunPinned: false,
     };
+    markVolcanoes(cells);
     refresh(state);
     equilibrate(state);
     state.startT = meanTemp(state);
+    state.feel = state.startT;
     snapshot(state);
     var sc = SCENARIO[id];
     state.log.push({ year: 0, text: sc.intro + teach(state, "climate") });
@@ -470,13 +476,66 @@
     return best;
   }
 
+  function defaultPlanet() {
+    return {
+      core: 0, coreNow: 0,
+      co2Queue: 0,
+      o2: 21, o2Now: 21,
+      albedo: 30, albedoNow: 30,
+      rainBias: 1, rainNow: 1,
+      uplift: 0,
+      sea: 0, seaNow: 0,
+    };
+  }
+
+  function ensurePlanet(state) {
+    if (!state.planet) state.planet = defaultPlanet();
+    var p = state.planet;
+    if (p.coreNow == null) p.coreNow = p.core || 0;
+    if (p.co2Queue == null) p.co2Queue = 0;
+    if (p.o2 == null) p.o2 = 21;
+    if (p.o2Now == null) p.o2Now = p.o2;
+    if (p.albedo == null) p.albedo = 30;
+    if (p.albedoNow == null) p.albedoNow = p.albedo;
+    if (p.rainBias == null) p.rainBias = 1;
+    if (p.rainNow == null) p.rainNow = p.rainBias;
+    if (p.uplift == null) p.uplift = 0;
+    if (p.sea == null) p.sea = 0;
+    if (p.seaNow == null) p.seaNow = p.sea;
+    return p;
+  }
+
+  function markVolcanoes(cells) {
+    var best = -1;
+    var bi = -1;
+    cells.forEach(function (c, i) {
+      if (!c.sea && c.e > best) { best = c.e; bi = i; }
+    });
+    if (bi >= 0) cells[bi].volcano = Math.max(cells[bi].volcano || 0, 0.85);
+  }
+
   function climateTemp(state, cell, r, wf) {
+    var p = ensurePlanet(state);
     var latT = 29 - latOf(r) * 22;
     var t = latT - cell.e * 3.6;
     t = t * (1 - 0.42 * wf) + 17 * 0.42 * wf;
-    t += state.tempShift;
-    t += Math.min(5.5, state.co2 * 0.085);
+    t += state.tempShift || 0;
+    t += Math.min(4.2, (state.co2 || 0) * 0.06);
+    t += p.coreNow || 0;
+    t -= ((p.albedoNow || 30) - 30) * 0.12;
+    if (cell.volcano > 0.4) t += 0.6;
     return t;
+  }
+
+  function feelBand(state) {
+    var t = state.feel == null ? meanTemp(state) : state.feel;
+    var name = "Cozy";
+    if (t < 4) name = "Ice Age";
+    else if (t < 8) name = "Cool";
+    else if (t < 16) name = "Cozy";
+    else if (t < 21) name = "Hot";
+    else name = "Scorching";
+    return { temp: t, name: name };
   }
 
   function computeClimate(state) {
@@ -509,6 +568,7 @@
         rain *= dryWind;
         if (t < 1) rain *= 0.7;
         if (cell.sea) rain *= 0.55;
+        rain *= ensurePlanet(state).rainNow || 1;
         rain = Math.max(0, rain);
         climR[i] = rain;
         air = Math.max(6, air - rain * 0.18);
@@ -520,7 +580,7 @@
   function nearWet(cell) { return !!(cell.lake); }
 
   function biomeOf(cell, t, rain) {
-    if (cell.sea || cell.lake) return "aquatic";
+    if (cell.sea || cell.lake || cell.flood) return "aquatic";
     if (cell.e >= 4) return "mountain";
     if (t <= 0.5) return "tundra";
     var soaked = cell.moist >= 68 || (nearWet(cell) && cell.moist >= 48);
@@ -712,9 +772,11 @@
         if (!org || org.role !== "producer") return;
         base += orgFits(org, b, v.climT[i]) ? 0.18 : 0.02;
       });
-      if (cell.sea || cell.lake) water += Math.max(0, base);
+      if (cell.sea || cell.lake || cell.flood) water += Math.max(0, base);
       else land += Math.max(0, base);
     }
+    var o2 = ensurePlanet(state).o2Now || 21;
+    land *= 1 + (o2 - 21) * 0.015;
     return { land: land * 7.2, water: water * 6 };
   }
 
@@ -781,7 +843,12 @@
     if (tool === "rename") return renameNation(state, action);
     if (tool === "gov") return setGov(state, action);
     if (tool === "flag") return setFlag(state, action);
-    if (tool === "sun") { state.sun = action.id || "noon"; return { ok: true }; }
+    if (tool === "sun") {
+      state.sun = action.id || "noon";
+      if (action.pinned) state.sunPinned = true;
+      return { ok: true };
+    }
+    if (tool === "planet") return applyPlanet(state, action);
     if (!inside(c, r)) return { ok: false, msg: "That spot is off the map." };
     var i = idx(c, r);
     var cell = state.cells[i];
@@ -1021,6 +1088,137 @@
     return { ok: true };
   }
 
+  function applyPlanet(state, action) {
+    var p = ensurePlanet(state);
+    var kind = action.kind;
+    var dir = action.dir > 0 ? 1 : -1;
+    var msg = "";
+    if (kind === "core") {
+      p.core = clamp(p.core + dir * 1.2, -4, 6);
+      msg = dir > 0
+        ? "Core heat is rising. Volcanoes and a warmer climate show up over the next seasons, not this instant."
+        : "Core heat is cooling. The climate eases toward cooler weather over several seasons.";
+    } else if (kind === "co2") {
+      p.co2Queue += dir * 4;
+      msg = dir > 0
+        ? "Carbon dioxide is mixing into the air. Heat builds slowly. One season will not show the whole change."
+        : "Carbon dioxide is coming down. Cooling, if it comes, arrives over several seasons.";
+    } else if (kind === "o2") {
+      p.o2 = clamp(p.o2 + dir * 1.5, 14, 28);
+      msg = dir > 0
+        ? "Oxygen is rising. Plants can support a little more life once the air mixes. Animals still need plants first."
+        : "Oxygen is falling. Producers make a little less food after the air has time to change.";
+    } else if (kind === "albedo") {
+      p.albedo = clamp(p.albedo + dir * 6, 10, 70);
+      msg = dir > 0
+        ? "The planet is brighter, so it bounces more sunlight. Albedo is that bounce. Cooling comes after a delay."
+        : "The planet is darker, so it keeps more sunlight. Warming comes after a delay.";
+    } else if (kind === "rain") {
+      p.rainBias = clamp(p.rainBias + dir * 0.18, 0.45, 1.85);
+      msg = dir > 0
+        ? "More clouds and rain are on the way. Rivers and wetlands respond over the next seasons."
+        : "Fewer clouds. Dry places can spread after the rain pattern settles.";
+    } else if (kind === "uplift") {
+      p.uplift = clamp(p.uplift + 1, 0, 4);
+      msg = "Tectonic uplift is queued. Ridges and a volcano rise next season, then rain and biomes shift.";
+    } else if (kind === "sea") {
+      p.sea = clamp((p.sea || 0) + dir * 0.7, 0, 2.4);
+      msg = dir > 0
+        ? "Sea level will creep up. Low coasts flood after a season or two, not the moment you press the button."
+        : "Sea level will ease down. Flooded coasts can dry once the ocean retreats.";
+    } else return { ok: false, msg: "That planet control is not ready." };
+    remember(state, "planet", -1, -1, kind + " " + dir);
+    return { ok: true, msg: msg };
+  }
+
+  function planetAdvance(state, logs) {
+    var p = ensurePlanet(state);
+    p.coreNow = p.coreNow + (p.core - p.coreNow) * 0.35;
+    p.albedoNow = p.albedoNow + (p.albedo - p.albedoNow) * 0.35;
+    p.rainNow = p.rainNow + (p.rainBias - p.rainNow) * 0.35;
+    p.o2Now = p.o2Now + (p.o2 - p.o2Now) * 0.35;
+    p.seaNow = p.seaNow + (p.sea - p.seaNow) * 0.35;
+    if (p.co2Queue) {
+      var add = p.co2Queue * 0.35;
+      state.co2 = Math.max(0, state.co2 + add);
+      p.co2Queue -= add;
+      if (Math.abs(p.co2Queue) < 0.04) p.co2Queue = 0;
+    }
+    applySea(state, logs);
+    if (p.uplift > 0.4) {
+      applyUplift(state, logs);
+      p.uplift = Math.max(0, p.uplift - 0.7);
+    }
+  }
+
+  function applySea(state, logs) {
+    var level = state.planet.seaNow || 0;
+    var flooded = 0;
+    if (level <= 0.2) {
+      state.cells.forEach(function (c) { if (!c.sea) c.flood = false; });
+      return;
+    }
+    var open = [];
+    var seen = new Array(N);
+    for (var i = 0; i < N; i++) seen[i] = false;
+    for (var s = 0; s < N; s++) {
+      if (!state.cells[s].sea) continue;
+      var sp = rc(s);
+      neighbors(sp.c, sp.r, false).forEach(function (j) {
+        var cell = state.cells[j];
+        if (seen[j] || cell.sea || cell.lake) return;
+        if (cell.e < level) { seen[j] = true; open.push(j); }
+      });
+    }
+    while (open.length) {
+      var j = open.pop();
+      if (!state.cells[j].flood) flooded++;
+      state.cells[j].flood = true;
+      var p = rc(j);
+      neighbors(p.c, p.r, false).forEach(function (k) {
+        var cell = state.cells[k];
+        if (seen[k] || cell.sea || cell.lake) return;
+        if (cell.e < level) { seen[k] = true; open.push(k); }
+      });
+    }
+    for (var u = 0; u < N; u++) {
+      if (!state.cells[u].sea && !seen[u]) state.cells[u].flood = false;
+    }
+    if (flooded) {
+      logs.push("Sea level crept inland and flooded " + flooded + " low place" + (flooded === 1 ? "" : "s") + ". Coasts change slowly. One rainy afternoon does not do this. The ocean did.");
+    }
+  }
+
+  function applyUplift(state, logs) {
+    var picks = 0;
+    for (var i = 0; i < N && picks < 3; i++) {
+      var cell = state.cells[i];
+      if (cell.sea || cell.lake || cell.flood) continue;
+      var p = rc(i);
+      if (p.c < 2 || p.c > COLS - 3) continue;
+      if ((i + state.year * 5) % 19 !== 0) continue;
+      cell.e = Math.min(6, cell.e + 0.55);
+      cell.volcano = 1;
+      picks++;
+    }
+    if (!picks) {
+      var best = -1;
+      var bi = -1;
+      state.cells.forEach(function (c, idx) {
+        if (c.sea || c.lake) return;
+        if (c.e > best) { best = c.e; bi = idx; }
+      });
+      if (bi >= 0) {
+        state.cells[bi].e = Math.min(6, state.cells[bi].e + 0.55);
+        state.cells[bi].volcano = 1;
+        picks = 1;
+      }
+    }
+    if (picks) {
+      logs.push("The planet's core pushed rock upward. " + picks + " ridge" + (picks === 1 ? "" : "s") + " grew, and a volcano glowed. Mountains take many seasons to change the rain around them.");
+    }
+  }
+
   function undo(state) {
     if (!state.undo) return { ok: false, msg: "Nothing to undo." };
     state.cells = state.undo.cells;
@@ -1044,9 +1242,12 @@
 
   function step(state) {
     state.year += 1;
+    var logs = [];
+    planetAdvance(state, logs);
     rollWeather(state);
     refresh(state);
-    var logs = [];
+    var mean = meanTemp(state);
+    state.feel = state.feel == null ? mean : state.feel * 0.72 + mean * 0.28;
     var weatherLine = state.weather.name + ".";
     if (state.year === 1) weatherLine += teach(state, "weather") + " The biome map follows climate, the long pattern, so one storm does not repaint a desert into a forest.";
     logs.push(weatherLine);
@@ -1290,10 +1491,10 @@
     if (cell.coal > 0) {
       var take = Math.min(6, cell.coal);
       cell.coal -= take;
-      state.co2 += take * 0.7;
+      state.co2 += take * 0.18;
       cell.pol = Math.min(100, cell.pol + 8);
       state.heard.mined = (state.heard.mined || 0) + 1;
-      return "First scoop: " + r1(take) + " coal. It does not regrow, and the heat index climbed.";
+      return "First scoop: " + r1(take) + " coal. It does not regrow. The air warms a little, over many seasons, not all at once.";
     }
     if (cell.ore > 0) {
       var ore = Math.min(2.4, cell.ore);
@@ -1357,7 +1558,7 @@
           var take = Math.min(6, cell.coal);
           cell.coal -= take;
           coalTake += take;
-          state.co2 += take * 0.7;
+          state.co2 += take * 0.18;
           cell.pol = Math.min(100, cell.pol + 8);
           polAdd += 8;
           neighbors(rc(i).c, rc(i).r, false).forEach(function (j) {
@@ -2032,5 +2233,7 @@
     orgFits: function (id, biome, t) { return orgFits(ORG[id], biome, t); },
     govLabel: govLabel,
     lfName: lfName,
+    feelBand: feelBand,
+    ensurePlanet: ensurePlanet,
   };
 });
