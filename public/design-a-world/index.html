@@ -71,11 +71,15 @@
             <button type="button" data-view="climate" aria-pressed="false">Climate rain</button>
             <button type="button" data-view="weather" aria-pressed="false">This season</button>
           </div>
+          <label class="focus-pick" id="focus-wrap" hidden>Zoom
+            <select id="focus-select" aria-label="Earth region"></select>
+          </label>
           <p class="wind" id="wind-note">Drag to spin. The bright edge is day. City lights show on the night side.</p>
         </div>
         <div class="world-frame">
           <canvas id="globe-view" tabindex="0" aria-label="Spinning planet. Drag to turn it. Switch to Region to edit one place."></canvas>
           <canvas id="world" hidden tabindex="0" aria-label="Region map. Click a place to use the selected tool."></canvas>
+          <p id="toast" class="toast" hidden role="status"></p>
         </div>
         <p id="readout" class="readout" aria-live="polite">Choose a tool, then a place on the region map.</p>
         <div id="science" class="field-card" hidden>
@@ -122,6 +126,7 @@
         </div>
       </section>
       <aside class="side" aria-label="Season report">
+        <div class="side-scroll">
         <h2 id="scenario-name">World</h2>
         <div class="thermo" id="thermo">
           <p class="thermo-kicker">Climate feel</p>
@@ -155,6 +160,8 @@
         </div>
         <div id="alerts"></div>
         <div id="nations"></div>
+        </div>
+        <div class="side-foot">
         <label class="note-label">Season idea
           <textarea id="season-note" rows="2" placeholder="What are you trying, and what might happen later?"></textarea>
         </label>
@@ -163,6 +170,7 @@
           <button type="button" class="primary" id="next-season">Next season</button>
         </div>
         <button type="button" class="ghost wide" id="run-four">Let 4 seasons pass</button>
+        </div>
       </aside>
     </div>
   </div>
@@ -195,7 +203,7 @@
     </div>
   </div>
 
-  <p id="toast" class="toast" hidden role="status"></p>
+  <script src="js/earth.js"></script>
   <script src="js/sim.js"></script>
   <script src="js/draw.js"></script>
   <script src="js/globe.js"></script>

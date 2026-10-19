@@ -93,31 +93,45 @@
   function faceNight() {
     var pack = getPack();
     var state = pack && pack.state;
+    if (state && state.scenario === "earth" && window.WorldEarth) {
+      var spec = WorldEarth.regionById(state.focus || "plains");
+      faceLonLat((spec.lon + spec.lon2) / 2, (spec.lat + spec.lat2) / 2, true);
+      return;
+    }
     var c = 8;
     var r = 5;
     if (state && state.nations && state.nations[0] && state.nations[0].capital) {
       c = state.nations[0].capital.c;
       r = state.nations[0].capital.r;
     }
-    var theta = ((r + 0.5) / 12) * Math.PI;
-    var phi = ((c + 0.5) / 16) * Math.PI * 2;
+    aimSphere(((c + 0.5) / 16) * Math.PI * 2, ((r + 0.5) / 12) * Math.PI, true);
+  }
+
+  function faceLonLat(lon, lat, wantNight) {
+    var u = (lon + 180) / 360;
+    var v = (90 - lat) / 180;
+    aimSphere(u * Math.PI * 2, v * Math.PI, !!wantNight);
+    pitch = clamp((lat / 90) * 0.55, -0.42, 0.42);
+  }
+
+  function aimSphere(phi, theta, wantNight) {
     var mx = Math.sin(theta) * Math.cos(phi);
     var my = Math.cos(theta);
     var mz = Math.sin(theta) * Math.sin(phi);
     var sun = norm3(0.92, 0.18, 0.28);
     var best = yaw;
     var bestScore = -99;
-    for (var i = 0; i < 90; i++) {
-      var a = (i / 90) * Math.PI * 2;
+    for (var i = 0; i < 120; i++) {
+      var a = (i / 120) * Math.PI * 2;
       var x = mx * Math.cos(a) + mz * Math.sin(a);
       var z = -mx * Math.sin(a) + mz * Math.cos(a);
       var ndl = x * sun[0] + my * sun[1] + z * sun[2];
-      var score = z * 1.4 + (ndl < -0.2 ? 1.6 : ndl < 0 ? 0.4 : -1);
+      var lit = wantNight ? (ndl < -0.22 ? 2.2 : -1.2) : (ndl > 0.28 ? 2.2 : -1.2);
+      var score = z * 1.6 + lit;
       if (score > bestScore) { bestScore = score; best = a; }
     }
     yaw = best;
-    pitch = 0.12;
-    hold = 240;
+    hold = 360;
   }
 
   function cellAt(clientX, clientY) {
@@ -172,10 +186,10 @@
 
   function sizeOf() {
     var rect = canvas.getBoundingClientRect();
-    var dpr = low ? 1 : Math.min(1.25, window.devicePixelRatio || 1);
+    var dpr = low ? 1 : Math.min(1.5, window.devicePixelRatio || 1);
     var w = Math.max(2, Math.floor(rect.width * dpr));
     var h = Math.max(2, Math.floor(rect.height * dpr));
-    var cap = low ? 420 : 640;
+    var cap = low ? 800 : 1400;
     if (w > cap) {
       h = Math.max(2, Math.floor(h * cap / w));
       w = cap;
@@ -199,245 +213,200 @@
   }
 
   function paintTextures(state) {
-    var tw = low ? 128 : 256;
-    var th = low ? 64 : 128;
-    paintDay(state, tw, th);
-    paintNight(state, tw, th);
+    var tw = low ? 512 : 1024;
+    var th = low ? 256 : 512;
+    if (state && state.scenario === "earth" && window.WorldEarth) paintEarth(state, tw, th);
+    else paintCells(state, tw, th);
     paintClouds(state, tw, th);
   }
 
-  function paintDay(state, tw, th) {
+  function paintEarth(state, tw, th) {
+    var planet = state.planet || {};
+    var heat = window.WorldSim && WorldSim.visualHeat ? WorldSim.visualHeat(state) : 0;
+    var thresh = 36 + Math.max(0, planet.seaNow || 0) * 28;
+    var focus = state.focus ? WorldEarth.regionById(state.focus) : null;
+    var maps = WorldEarth.paintMaps(tw, th, {
+      thresh: thresh,
+      heat: heat,
+      core: planet.coreNow || 0,
+      focus: focus
+    });
+    blit(dayCanvas, maps.day, tw, th);
+    blit(nightCanvas, maps.night, tw, th);
+  }
+
+  function blit(target, data, tw, th) {
+    target.width = tw;
+    target.height = th;
+    var g = target.getContext("2d");
+    var img = g.createImageData(tw, th);
+    img.data.set(data);
+    g.putImageData(img, 0, 0);
+  }
+
+  function paintCells(state, tw, th) {
     dayCanvas.width = tw;
     dayCanvas.height = th;
-    var g = dayCanvas.getContext("2d");
-    var img = g.createImageData(tw, th);
-    var d = img.data;
-    var feel = state && state.feel != null ? state.feel : 12;
-    var iceReach = clamp(0.05 + (11 - feel) * 0.055, 0.0, 0.5);
-    for (var y = 0; y < th; y++) {
-      var v = (y + 0.5) / th;
-      for (var x = 0; x < tw; x++) {
-        var u = (x + 0.5) / tw;
-        var sample = sampleLand(state, u, v);
-        var lat = Math.abs(v - 0.5) * 2;
-        var icy = lat > 1 - iceReach || sample.temp < 0.4;
-        var col = sample.rgb;
-        if (icy && !sample.water) {
-          var k = sample.temp < 0 ? 0.85 : 0.62;
-          col = [col[0] * (1 - k) + 236 * k, col[1] * (1 - k) + 244 * k, col[2] * (1 - k) + 248 * k];
-        }
-        if (sample.water) {
-          var depth = 0.75 + 0.25 * Math.sin(u * 40 + v * 20);
-          col = [col[0] * depth, col[1] * depth, col[2] * (0.9 + 0.1 * depth)];
-        }
-        col[0] += sample.shade;
-        col[1] += sample.shade * 0.92;
-        col[2] += sample.shade * 0.8;
-        if (sample.volcano > 0.25) {
-          var glow = sample.volcano;
-          col = [col[0] * (1 - glow) + 255 * glow, col[1] * (1 - glow) + 90 * glow, col[2] * (1 - glow) + 24 * glow];
-        }
-        var p = (y * tw + x) * 4;
-        d[p] = clampByte(col[0]);
-        d[p + 1] = clampByte(col[1]);
-        d[p + 2] = clampByte(col[2]);
-        d[p + 3] = 255;
-      }
-    }
-    stampRivers(d, tw, th, state);
-    stampVolcanoes(d, tw, th, state);
-    g.putImageData(img, 0, 0);
-  }
-
-  function stampRivers(d, tw, th, state) {
-    if (!state || !state.view) return;
-    for (var i = 0; i < 192; i++) {
-      if (!state.view.river[i]) continue;
-      var c = i % 16;
-      var r = (i / 16) | 0;
-      var x0 = ((c + 0.5) / 16) * tw;
-      var y0 = ((r + 0.5) / 12) * th;
-      var down = state.view.down[i];
-      var x1 = x0;
-      var y1 = y0 + th / 12;
-      if (down >= 0) {
-        x1 = (((down % 16) + 0.5) / 16) * tw;
-        y1 = ((((down / 16) | 0) + 0.5) / 12) * th;
-      }
-      var steps = 8;
-      for (var s = 0; s <= steps; s++) {
-        var x = x0 + (x1 - x0) * (s / steps);
-        var y = y0 + (y1 - y0) * (s / steps);
-        blot(d, tw, th, x, y, 1.4, [120, 200, 230]);
-      }
-    }
-  }
-
-  function blot(d, tw, th, x, y, rad, col) {
-    var x0 = Math.max(0, Math.floor(x - rad));
-    var x1 = Math.min(tw - 1, Math.ceil(x + rad));
-    var y0 = Math.max(0, Math.floor(y - rad));
-    var y1 = Math.min(th - 1, Math.ceil(y + rad));
-    for (var yy = y0; yy <= y1; yy++) {
-      for (var xx = x0; xx <= x1; xx++) {
-        var p = (yy * tw + xx) * 4;
-        d[p] = col[0];
-        d[p + 1] = col[1];
-        d[p + 2] = col[2];
-      }
-    }
-  }
-
-  function stampVolcanoes(d, tw, th, state) {
-    if (!state) return;
-    var heat = state.planet && state.planet.coreNow ? state.planet.coreNow : 0;
-    state.cells.forEach(function (cell, i) {
-      if (!cell.volcano || cell.volcano < 0.2) return;
-      var c = i % 16;
-      var r = (i / 16) | 0;
-      var rad = 2.4 + Math.max(0, heat) * 1.6 + cell.volcano;
-      blot(d, tw, th, ((c + 0.5) / 16) * tw, ((r + 0.5) / 12) * th, rad, [255, 78, 24]);
-    });
-  }
-
-  function paintNight(state, tw, th) {
     nightCanvas.width = tw;
     nightCanvas.height = th;
-    var g = nightCanvas.getContext("2d");
-    var img = g.createImageData(tw, th);
-    var d = img.data;
+    var day = dayCanvas.getContext("2d").createImageData(tw, th);
+    var night = nightCanvas.getContext("2d").createImageData(tw, th);
+    var dd = day.data;
+    var nd = night.data;
+    var feel = state && state.feel != null ? state.feel : 12;
+    var iceReach = clamp(0.08 + (12 - feel) * 0.012, 0.04, 0.42);
     for (var y = 0; y < th; y++) {
       var v = (y + 0.5) / th;
       for (var x = 0; x < tw; x++) {
         var u = (x + 0.5) / tw;
         var sample = sampleLand(state, u, v);
-        var col = sample.water
-          ? [8, 22, 48]
-          : [sample.rgb[0] * 0.22 + 10, sample.rgb[1] * 0.2 + 12, sample.rgb[2] * 0.24 + 22];
-        if (sample.city > 0 && !sample.water) {
-          var glow = sample.city;
-          col = [70 + 185 * glow, 50 + 150 * glow, 18];
+        var n = fbm(u * 9, v * 5);
+        var lat = Math.abs(v - 0.5) * 2;
+        var col = sample.rgb.slice();
+        col[0] += (n - 0.5) * 28 + sample.shade;
+        col[1] += (n - 0.5) * 22 + sample.shade * 0.9;
+        col[2] += (n - 0.5) * 14 + sample.shade * 0.6;
+        if (!sample.water && (lat > 1 - iceReach || sample.temp < 0.2)) {
+          col = [230, 238, 244];
         }
-        if (sample.volcano > 0.25) col = [220, 50, 16];
+        if (sample.water) {
+          var depth = 0.78 + n * 0.22;
+          col = [14 * depth, 70 * depth, 150 * depth];
+        }
         var p = (y * tw + x) * 4;
-        d[p] = clampByte(col[0]);
-        d[p + 1] = clampByte(col[1]);
-        d[p + 2] = clampByte(col[2]);
-        d[p + 3] = 255;
+        dd[p] = clampByte(col[0]);
+        dd[p + 1] = clampByte(col[1]);
+        dd[p + 2] = clampByte(col[2]);
+        dd[p + 3] = 255;
+        nd[p] = sample.water ? 4 : 8;
+        nd[p + 1] = sample.water ? 12 : 14;
+        nd[p + 2] = sample.water ? 24 : 28;
+        nd[p + 3] = 255;
       }
     }
-    stampCities(d, tw, th, state);
-    g.putImageData(img, 0, 0);
+    stampCellLights(nd, tw, th, state);
+    stampCellVolcanoes(dd, nd, tw, th, state);
+    dayCanvas.getContext("2d").putImageData(day, 0, 0);
+    nightCanvas.getContext("2d").putImageData(night, 0, 0);
   }
 
-  function stampCities(d, tw, th, state) {
+  function stampCellLights(nd, tw, th, state) {
     if (!state || !state.nations) return;
     state.nations.forEach(function (n) {
       if (!n.capital) return;
-      blot(d, tw, th, ((n.capital.c + 0.5) / 16) * tw, ((n.capital.r + 0.5) / 12) * th, 3.2, [255, 214, 120]);
+      glow(nd, tw, th, ((n.capital.c + 0.5) / 16) * tw, ((n.capital.r + 0.5) / 12) * th, tw / 70, [255, 226, 140]);
     });
     if (!state.cells) return;
     state.cells.forEach(function (cell, i) {
       if (cell.sea || (cell.use !== "town" && cell.use !== "suburb")) return;
       var c = i % 16;
       var r = (i / 16) | 0;
-      blot(d, tw, th, ((c + 0.5) / 16) * tw, ((r + 0.5) / 12) * th, 2.4, [255, 196, 90]);
+      glow(nd, tw, th, ((c + 0.5) / 16) * tw, ((r + 0.5) / 12) * th, tw / 90, [255, 210, 120]);
     });
+  }
+
+  function stampCellVolcanoes(dd, nd, tw, th, state) {
+    if (!state || !state.cells) return;
+    var heat = state.planet && state.planet.coreNow ? state.planet.coreNow : 0;
+    var rad = tw / 80 + Math.max(0, heat) * (tw / 70);
+    state.cells.forEach(function (cell, i) {
+      if (!cell.volcano || cell.volcano < 0.2) return;
+      var c = i % 16;
+      var r = (i / 16) | 0;
+      glow(dd, tw, th, ((c + 0.5) / 16) * tw, ((r + 0.5) / 12) * th, rad, [255, 78, 24]);
+      glow(nd, tw, th, ((c + 0.5) / 16) * tw, ((r + 0.5) / 12) * th, rad * 0.7, [255, 64, 20]);
+    });
+  }
+
+  function glow(data, tw, th, x, y, rad, col) {
+    var x0 = Math.floor(x - rad);
+    var x1 = Math.ceil(x + rad);
+    var y0 = Math.max(0, Math.floor(y - rad));
+    var y1 = Math.min(th - 1, Math.ceil(y + rad));
+    for (var yy = y0; yy <= y1; yy++) {
+      for (var xx = x0; xx <= x1; xx++) {
+        var d = Math.sqrt((xx - x) * (xx - x) + (yy - y) * (yy - y)) / rad;
+        if (d >= 1) continue;
+        var k = Math.pow(1 - d, 1.7);
+        var px = ((xx % tw) + tw) % tw;
+        var p = (yy * tw + px) * 4;
+        data[p] = clampByte(data[p] * (1 - k) + col[0] * k);
+        data[p + 1] = clampByte(data[p + 1] * (1 - k) + col[1] * k);
+        data[p + 2] = clampByte(data[p + 2] * (1 - k) + col[2] * k);
+      }
+    }
   }
 
   function paintClouds(state, tw, th) {
     cloudCanvas.width = tw;
     cloudCanvas.height = th;
-    var storm = state && state.weather ? Math.max(0, (state.weather.rainMul || 1) - 0.9) : 0;
-    var rainNow = state && state.planet && state.planet.rainNow ? state.planet.rainNow : 1;
-    var cold = state && state.weather && state.weather.tempAdd < 0 ? 1 : 0;
-    var alpha = new Float32Array(tw * th);
-    var period = 32;
-    for (var y = 0; y < th; y++) {
-      var v = y / th;
-      for (var x = 0; x < tw; x++) {
-        var u = x / tw;
-        var rain = sampleRain(state, u, v);
-        var n = noise2(u * period, v * period * 0.55);
-        var n2 = noise2(u * period * 2 + 4, v * period + 9);
-        var blob = n * 0.72 + n2 * 0.28;
-        var wet = clamp((rain * rainNow - 8) / 34, 0, 1);
-        var gate = storm > 0.35 ? 0.34 : 0.52;
-        var a = 0;
-        if (blob > gate) a = (blob - gate) / (1 - gate);
-        a = a * a * wet;
-        if (storm > 0.35) a *= 0.85;
-        alpha[y * tw + x] = clamp(a, 0, storm > 0.35 ? 0.62 : 0.42);
-      }
+    var storm = 0;
+    var cold = 0;
+    if (state && state.weather) {
+      storm = clamp(((state.weather.rainMul || 1) - 1) / 0.38, 0, 1);
+      cold = state.weather.tempAdd < 0 ? 1 : 0;
     }
-    alpha = blurAlpha(alpha, tw, th);
-    alpha = blurAlpha(alpha, tw, th);
+    var rainNow = state && state.planet && state.planet.rainNow ? state.planet.rainNow : 1;
+    if (rainNow > 1.15) storm = Math.max(storm, clamp((rainNow - 1) / 0.6, 0, 1));
     var g = cloudCanvas.getContext("2d");
     var img = g.createImageData(tw, th);
     var d = img.data;
-    for (var i = 0; i < tw * th; i++) {
-      var p = i * 4;
-      var shade = cold ? 248 : (storm > 0.4 ? 214 : 244);
-      d[p] = shade;
-      d[p + 1] = shade;
-      d[p + 2] = cold ? 255 : shade;
-      d[p + 3] = clampByte(alpha[i] * 255);
+    var period = 3.2;
+    for (var y = 0; y < th; y++) {
+      var v = y / th;
+      var lat = Math.abs(v - 0.5) * 2;
+      for (var x = 0; x < tw; x++) {
+        var u = x / tw;
+        var band = Math.exp(-Math.pow((lat - 0.15) / 0.28, 2)) * 0.55 + Math.exp(-Math.pow((lat - 0.62) / 0.22, 2)) * 0.35;
+        var n = fbm(u * period * 4, v * period * 2);
+        var n2 = fbm(u * period * 9 + 5, v * period * 6);
+        var swirl = 0;
+        if (storm > 0.2) {
+          var dx = (u - 0.62 + 1) % 1 - 0.5;
+          var dy = v - 0.42;
+          var ang = Math.atan2(dy, dx);
+          var rad = Math.sqrt(dx * dx + dy * dy);
+          swirl = fbm(Math.cos(ang) * 2 + rad * 14, Math.sin(ang) * 2 + 3) * storm;
+        }
+        var blob = n * 0.62 + n2 * 0.28 + swirl * 0.45 + band * 0.35;
+        var gate = storm > 0.35 ? 0.42 : 0.58;
+        var a = blob > gate ? (blob - gate) / (1 - gate) : 0;
+        a = a * a * (0.55 + band);
+        if (lat > 0.92) a *= 0.3;
+        a = clamp(a, 0, storm > 0.35 ? 0.48 : 0.34);
+        var shade = cold ? 236 : 248;
+        var p = (y * tw + x) * 4;
+        d[p] = shade;
+        d[p + 1] = shade;
+        d[p + 2] = cold ? 255 : shade;
+        d[p + 3] = clampByte(a * 255);
+      }
     }
     g.putImageData(img, 0, 0);
-    cloudCanvas._storm = clamp(storm * 1.5 + Math.max(0, rainNow - 1) * 0.8, 0, 1);
+    cloudCanvas._storm = storm;
     cloudCanvas._cold = cold;
   }
 
-  function blurAlpha(src, tw, th) {
-    var out = new Float32Array(tw * th);
-    for (var y = 0; y < th; y++) {
-      for (var x = 0; x < tw; x++) {
-        var sum = 0;
-        var n = 0;
-        for (var dy = -1; dy <= 1; dy++) {
-          var yy = y + dy;
-          if (yy < 0 || yy >= th) continue;
-          for (var dx = -1; dx <= 1; dx++) {
-            var xx = (x + dx + tw) % tw;
-            sum += src[yy * tw + xx];
-            n++;
-          }
-        }
-        out[y * tw + x] = sum / n;
-      }
-    }
-    return out;
-  }
-
-  function noise2(x, y) {
-    var x0 = Math.floor(x);
-    var y0 = Math.floor(y);
-    var fx = x - x0;
-    var fy = y - y0;
-    fx = fx * fx * (3 - 2 * fx);
-    fy = fy * fy * (3 - 2 * fy);
-    function h(ix, iy) {
-      var wx = ((ix % 64) + 64) % 64;
-      var wy = ((iy % 64) + 64) % 64;
-      return hash(wx, wy);
-    }
-    var a = h(x0, y0);
-    var b = h(x0 + 1, y0);
-    var c = h(x0, y0 + 1);
-    var d = h(x0 + 1, y0 + 1);
-    return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
+  function fbm(x, y) {
+    var n = noise2(x, y) * 0.62;
+    n += noise2(x * 2.05 + 4, y * 2.05) * 0.28;
+    n += noise2(x * 4.1 + 8, y * 4.1) * 0.1;
+    return n;
   }
 
   function sampleLand(state, u, v) {
     if (!state || !state.cells) {
-      return { rgb: [40, 90, 140], shade: 0, water: true, temp: 16, volcano: 0, city: 0 };
+      return { rgb: [40, 90, 140], shade: 0, water: true, temp: 16, volcano: 0 };
     }
-    var x = u * 16 - 0.5;
-    var y = v * 12 - 0.5;
+    var wobble = (noise2(u * 18, v * 10) - 0.5) * 0.55;
+    var x = u * 16 - 0.5 + wobble;
+    var y = v * 12 - 0.5 + wobble * 0.4;
     var c0 = Math.floor(x);
     var r0 = Math.floor(y);
     var fx = x - c0;
     var fy = y - r0;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
     function at(c, r) {
       c = ((c % 16) + 16) % 16;
       r = Math.max(0, Math.min(11, r));
@@ -445,28 +414,15 @@
       var cell = state.cells[i];
       var biome = state.view && state.view.biome ? state.view.biome[i] : "grassland";
       var rgb = (BIOME[biome] || BIOME.grassland).slice();
-      if (cell.sea) rgb = [14, 78, 148];
-      else if (cell.lake || cell.flood) rgb = [24, 130, 176];
-      var eL = state.cells[r * 16 + ((c + 15) % 16)].e;
-      var up = state.cells[Math.max(0, r - 1) * 16 + c].e;
-      var shade = (cell.e - eL) * 16 + (cell.e - up) * 10;
-      var city = 0;
-      if (state.view && state.view.owner && state.view.owner[i]) city = 0.55;
-      if (cell.use === "town" || cell.use === "suburb") city = 1;
-      if (state.nations) {
-        for (var n = 0; n < state.nations.length; n++) {
-          var cap = state.nations[n].capital;
-          if (cap && cap.c === c && cap.r === r) city = 1;
-        }
-      }
+      var water = !!(cell.sea || cell.lake || cell.flood);
+      if (cell.sea) rgb = [16, 74, 150];
+      else if (cell.lake || cell.flood) rgb = [28, 120, 176];
       return {
         rgb: rgb,
-        shade: shade,
-        water: !!(cell.sea || cell.lake || cell.flood),
+        water: water,
+        e: cell.e,
         temp: state.view && state.view.climT ? state.view.climT[i] : 12,
-        volcano: cell.volcano || 0,
-        city: city,
-        e: cell.e
+        volcano: cell.volcano || 0
       };
     }
     var a = at(c0, r0);
@@ -475,22 +431,18 @@
     var d = at(c0 + 1, r0 + 1);
     var rgb = [0, 0, 0];
     for (var k = 0; k < 3; k++) {
-      var top = a.rgb[k] * (1 - fx) + b.rgb[k] * fx;
-      var bot = c.rgb[k] * (1 - fx) + d.rgb[k] * fx;
-      rgb[k] = top * (1 - fy) + bot * fy;
+      rgb[k] = (a.rgb[k] * (1 - fx) + b.rgb[k] * fx) * (1 - fy) + (c.rgb[k] * (1 - fx) + d.rgb[k] * fx) * fy;
     }
-    a.rgb = rgb;
-    if (fx > 0.45 || fy > 0.45) a.water = a.water && b.water && c.water;
-    a.volcano = Math.max(a.volcano, fx < 0.35 && fy < 0.35 ? a.volcano : 0);
-    return a;
-  }
-
-  function sampleRain(state, u, v) {
-    if (!state || !state.view) return 18;
-    var c = Math.max(0, Math.min(15, Math.floor(u * 16)));
-    var r = Math.max(0, Math.min(11, Math.floor(v * 12)));
-    var rain = state.view.rain ? state.view.rain[r * 16 + c] : 18;
-    return rain;
+    var e = (a.e * (1 - fx) + b.e * fx) * (1 - fy) + (c.e * (1 - fx) + d.e * fx) * fy;
+    var eL = at(c0 - 1, r0).e;
+    var eU = at(c0, r0 - 1).e;
+    return {
+      rgb: rgb,
+      shade: (e - eL) * 18 + (e - eU) * 10,
+      water: a.water && b.water && c.water && d.water ? true : (a.water && fx < 0.35 && fy < 0.35),
+      temp: a.temp,
+      volcano: Math.max(a.volcano, b.volcano * (fx < 0.4 ? 1 : 0))
+    };
   }
 
   function uploadTex() {
@@ -506,7 +458,7 @@
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
 
@@ -517,8 +469,8 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
-    var proj = perspective(0.72, box.aspect, 0.1, 40);
-    var view = translate(0, 0, -2.65);
+    var proj = perspective(0.62, box.aspect, 0.1, 50);
+    var view = translate(0, 0.02, -4.15);
     var model = mul(rotX(pitch), rotY(yaw));
     var vp = mul(proj, view);
     var mvp = mul(vp, model);
@@ -564,16 +516,15 @@
       bindAttribs(cloudProg, cloudMesh);
     gl.drawElements(gl.TRIANGLES, cloudMesh.count, gl.UNSIGNED_SHORT, 0);
 
-    if (!low) {
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-      gl.useProgram(atmoProg);
-      var amvp = mul(vp, mul(model, scale(1.08)));
-      gl.uniformMatrix4fv(gl.getUniformLocation(atmoProg, "uMvp"), false, amvp);
-      gl.uniformMatrix3fv(gl.getUniformLocation(atmoProg, "uN"), false, nmat);
-      gl.uniform3fv(gl.getUniformLocation(atmoProg, "uSun"), sun);
-      bindAttribs(atmoProg, atmoMesh);
-      gl.drawElements(gl.TRIANGLES, atmoMesh.count, gl.UNSIGNED_SHORT, 0);
-    }
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.useProgram(atmoProg);
+    var amvp = mul(vp, mul(model, scale(1.09)));
+    gl.uniformMatrix4fv(gl.getUniformLocation(atmoProg, "uMvp"), false, amvp);
+    gl.uniformMatrix3fv(gl.getUniformLocation(atmoProg, "uN"), false, nmat);
+    gl.uniform3fv(gl.getUniformLocation(atmoProg, "uSun"), sun);
+    gl.uniform1f(gl.getUniformLocation(atmoProg, "uWarm"), warmthOf());
+    bindAttribs(atmoProg, atmoMesh);
+    gl.drawElements(gl.TRIANGLES, atmoMesh.count, gl.UNSIGNED_SHORT, 0);
     gl.depthMask(true);
     gl.disable(gl.BLEND);
   }
@@ -664,11 +615,11 @@
 
   function buildMeshes() {
     builtLow = low;
-    var seg = low ? [24, 12] : [48, 24];
+    var seg = low ? [40, 20] : [72, 36];
     mesh = sphereMesh(seg[0], seg[1], 1);
     cloudMesh = sphereMesh(seg[0], seg[1], 1);
     atmoMesh = sphereMesh(Math.max(16, seg[0] / 2), Math.max(10, seg[1] / 2), 1);
-    var stars = new Float32Array((low ? 80 : 180) * 3);
+    var stars = new Float32Array((low ? 120 : 280) * 3);
     for (var i = 0; i < stars.length; i += 3) {
       var v = norm3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
       stars[i] = v[0] * 8;
@@ -790,10 +741,14 @@
     "  vec3 h = normalize(sun + vec3(0.0, 0.0, 1.0));",
     "  float spec = pow(max(dot(n, h), 0.0), 36.0) * ocean * day;",
     "  float spark = sin(vUv.x * 80.0 + uTime * 2.2) * sin(vUv.y * 64.0 - uTime * 1.6);",
-    "  spec += max(spark, 0.0) * ocean * day * 0.28;",
+    "  spec += max(spark, 0.0) * ocean * day * 0.22;",
     "  col += vec3(0.75, 0.9, 1.0) * spec;",
-    "  col = mix(col, col * vec3(0.7, 0.86, 1.22) + vec3(0.02, 0.05, 0.1), clamp(-uWarm, 0.0, 1.0));",
-    "  col = mix(col, col * vec3(1.3, 0.9, 0.62), clamp(uWarm, 0.0, 1.0));",
+    "  float lamps = smoothstep(0.22, 0.82, night.r);",
+    "  col += vec3(1.2, 0.95, 0.48) * lamps * (1.0 - day) * 1.25;",
+    "  float warm = clamp(uWarm, 0.0, 1.0);",
+    "  float cool = clamp(-uWarm, 0.0, 1.0);",
+    "  col = mix(col, col * vec3(0.75, 0.88, 1.15), cool * 0.45);",
+    "  col = mix(col, col * vec3(1.18, 0.9, 0.72) + vec3(0.04, 0.015, 0.0), warm * (0.42 + (1.0 - ocean) * 0.15));",
     "  gl_FragColor = vec4(col, 1.0);",
     "}"
   ].join("\n");
@@ -813,14 +768,14 @@
     "  float ndl = dot(normalize(vN), normalize(uSun));",
     "  float day = smoothstep(-0.2, 0.45, ndl);",
     "  vec3 rgb = c.rgb * (0.72 + 0.28 * day);",
-    "  float streaks = fract(vUv.y * 30.0 + vUv.x * 4.0 - uTime * (0.35 - uCold * 0.2));",
-    "  float line = smoothstep(0.0, 0.015, streaks) * smoothstep(0.09, 0.035, streaks);",
-    "  float over = smoothstep(0.04, 0.22, c.a);",
-    "  float rain = line * uStorm * over;",
-    "  vec3 rainCol = mix(vec3(0.55, 0.72, 0.95), vec3(0.95, 0.97, 1.0), uCold);",
-    "  rgb = mix(rgb, rainCol, rain);",
-    "  float a = c.a * 0.8;",
-    "  a = max(a * (1.0 - rain * 0.3), rain * 0.42);",
+    "  float streaks = fract(vUv.y * 52.0 - vUv.x * 10.0 - uTime * (0.7 - uCold * 0.35));",
+    "  float line = smoothstep(0.0, 0.03, streaks) * smoothstep(0.2, 0.05, streaks);",
+    "  float over = smoothstep(0.02, 0.2, c.a);",
+    "  float rain = line * uStorm * (0.45 + over);",
+    "  vec3 rainCol = mix(vec3(0.62, 0.78, 1.0), vec3(0.95, 0.97, 1.0), uCold);",
+    "  rgb = mix(rgb, rainCol, clamp(rain, 0.0, 1.0));",
+    "  float a = c.a * 0.85;",
+    "  a = max(a, rain * 0.62);",
     "  if (a < 0.035) discard;",
     "  gl_FragColor = vec4(rgb, a);",
     "}"
@@ -830,12 +785,14 @@
     "precision mediump float;",
     "varying vec3 vN;",
     "uniform vec3 uSun;",
+    "uniform float uWarm;",
     "void main() {",
     "  vec3 n = normalize(vN);",
-    "  float fres = pow(1.0 - abs(n.z), 1.7);",
-    "  float day = 0.3 + 0.7 * smoothstep(-0.25, 0.55, dot(n, normalize(uSun)));",
-    "  vec3 col = vec3(0.4, 0.75, 1.0) * fres * day;",
-    "  gl_FragColor = vec4(col, fres * 0.95);",
+    "  float fres = pow(1.0 - abs(n.z), 1.6);",
+    "  float day = 0.35 + 0.65 * smoothstep(-0.25, 0.55, dot(n, normalize(uSun)));",
+    "  vec3 col = mix(vec3(0.35, 0.72, 1.0), vec3(1.0, 0.55, 0.28), clamp(uWarm, 0.0, 1.0));",
+    "  col = mix(col, vec3(0.45, 0.75, 1.0), clamp(-uWarm, 0.0, 1.0));",
+    "  gl_FragColor = vec4(col * fres * day, fres * 0.85);",
     "}"
   ].join("\n");
 
@@ -844,7 +801,7 @@
     "uniform mat4 uMvp;",
     "void main() {",
     "  gl_Position = uMvp * vec4(aPos, 1.0);",
-    "  gl_PointSize = 1.8;",
+    "  gl_PointSize = 2.2;",
     "}"
   ].join("\n");
 
@@ -856,8 +813,9 @@
   function warmthOf() {
     var pack = getPack();
     var state = pack && pack.state;
+    if (state && window.WorldSim && WorldSim.visualHeat) return WorldSim.visualHeat(state);
     if (!state || state.feel == null || state.startT == null) return 0;
-    return clamp((state.feel - state.startT) / 2.4, -1, 1);
+    return clamp((state.feel - state.startT) / 4, -1, 1);
   }
 
   function invModel(yawA, pitchA, p) {
@@ -913,6 +871,23 @@
   }
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
   function clampByte(n) { return Math.max(0, Math.min(255, n | 0)); }
+  function noise2(x, y) {
+    var x0 = Math.floor(x);
+    var y0 = Math.floor(y);
+    var fx = x - x0;
+    var fy = y - y0;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
+    function h(ix, iy) {
+      return hash(((ix % 128) + 128) % 128, ((iy % 128) + 128) % 128);
+    }
+    var a = h(x0, y0);
+    var b = h(x0 + 1, y0);
+    var c = h(x0, y0 + 1);
+    var d = h(x0 + 1, y0 + 1);
+    return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
+  }
+
   function hash(x, y) {
     var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
     return n - Math.floor(n);
@@ -924,6 +899,7 @@
     setLow: setLow,
     setMode: setMode,
     faceNight: faceNight,
+    faceLonLat: faceLonLat,
     cellAt: cellAt,
     dragged: function () { return moved > 8; }
   };

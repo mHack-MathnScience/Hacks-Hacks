@@ -142,6 +142,17 @@
 
   var SCENARIOS = [
     {
+      id: "earth",
+      name: "Earth",
+      blurb: "A real planet. Spin the globe, pick a region such as Texas, the Amazon, the Sahel, or the Arctic, and take care of the nations there.",
+      goals: [
+        "Name the physical region: its landforms and its climate.",
+        "Keep food and fresh water for the people who live there.",
+        "Watch sea level, heat, and carbon dioxide change the whole planet.",
+      ],
+      intro: "This is Earth. The continents, oceans, and big mountain ranges are in their usual places. Climate follows latitude: hot and wet near the equator, dry in the desert belts, cold near the poles. You manage one region. The globe still shows the whole planet.",
+    },
+    {
       id: "rainshadow",
       name: "Wet West, Dry East",
       blurb: "Wind from the ocean hits a ridge. One side stays wet. The other sits in a rain shadow. Two nations want to eat.",
@@ -384,17 +395,42 @@
     }
   }
 
-  function create(scenarioId, opts) {
-    opts = opts || {};
-    var id = SCENARIO[scenarioId] ? scenarioId : "rainshadow";
-    var seed = opts.seed != null ? (Number(opts.seed) >>> 0) : ((Math.floor(Math.random() * 900000) + 1000) >>> 0);
-    if (!seed) seed = 1;
-    var cells = terrain(id);
-    starterUse(id, cells);
-    starterLife(id).forEach(function (p) {
+  function earthPack(focus) {
+    var earth = (typeof globalThis !== "undefined" ? globalThis : window).WorldEarth;
+    if (!earth) return null;
+    var board = earth.board(focus || "plains");
+    var cells = board.cells.map(function (p) { return makeCell(p); });
+    (board.uses || []).forEach(function (u) {
+      if (inside(u.c, u.r) && !cells[idx(u.c, u.r)].sea) cells[idx(u.c, u.r)].use = u.use;
+    });
+    return board.spec ? {
+      cells: cells,
+      nations: board.nations,
+      life: board.life,
+      spec: board.spec
+    } : null;
+  }
+
+  function plantLife(cells, list) {
+    (list || []).forEach(function (p) {
+      if (!inside(p.c, p.r)) return;
       var cell = cells[idx(p.c, p.r)];
+      if (cell.sea) return;
       cell.life.push({ id: p.id, justified: false, reason: "", stress: 0, since: 0 });
     });
+  }
+
+  function create(scenarioId, opts) {
+    opts = opts || {};
+    var id = SCENARIO[scenarioId] ? scenarioId : "earth";
+    var seed = opts.seed != null ? (Number(opts.seed) >>> 0) : ((Math.floor(Math.random() * 900000) + 1000) >>> 0);
+    if (!seed) seed = 1;
+    var pack = id === "earth" ? earthPack(opts.focus) : null;
+    if (id === "earth" && !pack) id = "river";
+    var cells = pack ? pack.cells : terrain(id);
+    if (!pack) starterUse(id, cells);
+    plantLife(cells, pack ? pack.life : starterLife(id));
+    var co2Base = id === "coal" ? 6 : 3;
     var state = {
       v: 1,
       scenario: id,
@@ -403,14 +439,20 @@
       year: 0,
       name: String(opts.name || "").slice(0, 40),
       idea: "",
-      co2: id === "coal" ? 6 : 3,
+      co2: co2Base,
+      co2Base: co2Base,
+      earthLat: !!pack,
+      focus: pack ? pack.spec.id : "",
+      latBand: pack ? pack.spec.latBand : null,
+      dryMul: pack ? pack.spec.dryMul : 0,
+      wetSouth: pack ? pack.spec.wetSouth : 0,
       tempShift: id === "ice" ? -6 : 0,
       plants: 0, herb: 0, carn: 0, fish: 0, decomp: 0, apex: 0,
       timber: 36, water: 40,
       sun: "noon",
       weather: { name: "Waiting for the first season", rainMul: 1, tempAdd: 0 },
       cells: cells,
-      nations: starterNations(id),
+      nations: pack ? pack.nations : starterNations(id),
       choices: [],
       log: [],
       ideas: [],
@@ -437,8 +479,30 @@
     state.feel = state.startT;
     snapshot(state);
     var sc = SCENARIO[id];
-    state.log.push({ year: 0, text: sc.intro + teach(state, "climate") });
+    var lesson = pack && pack.spec.lesson ? " " + pack.spec.lesson : "";
+    state.log.push({ year: 0, text: sc.intro + lesson + teach(state, "climate") + teach(state, "region") });
     return state;
+  }
+
+  function setFocus(state, focus) {
+    if (!state || state.scenario !== "earth") return { ok: false, msg: "Regions are part of the Earth world." };
+    var pack = earthPack(focus);
+    if (!pack) return { ok: false, msg: "That region is not ready." };
+    state.focus = pack.spec.id;
+    state.cells = pack.cells;
+    state.nations = pack.nations;
+    state.latBand = pack.spec.latBand;
+    state.dryMul = pack.spec.dryMul;
+    state.wetSouth = pack.spec.wetSouth;
+    plantLife(state.cells, pack.life);
+    markVolcanoes(state.cells);
+    refresh(state);
+    equilibrate(state);
+    state.feel = meanTemp(state);
+    state.startT = state.feel;
+    var line = "You zoomed to " + pack.spec.name + ". " + pack.spec.lesson;
+    state.log.push({ year: state.year, text: line });
+    return { ok: true, msg: line, spec: pack.spec };
   }
 
   function equilibrate(state) {
@@ -516,15 +580,33 @@
 
   function climateTemp(state, cell, r, wf) {
     var p = ensurePlanet(state);
-    var latT = 29 - latOf(r) * 22;
-    var t = latT - cell.e * 3.6;
+    var t;
+    if (state.earthLat && state.latBand) {
+      var lat = state.latBand[0] + (state.latBand[1] - state.latBand[0]) * (r / (ROWS - 1));
+      t = 31 - Math.abs(lat) * 0.46 - cell.e * 2.6;
+    } else {
+      t = 29 - latOf(r) * 22 - cell.e * 3.6;
+    }
     t = t * (1 - 0.42 * wf) + 17 * 0.42 * wf;
     t += state.tempShift || 0;
-    t += Math.min(4.2, (state.co2 || 0) * 0.1);
-    t += p.coreNow || 0;
-    t -= ((p.albedoNow || 30) - 30) * 0.18;
-    if (cell.volcano > 0.4) t += 0.6;
+    var base = state.co2Base != null ? state.co2Base : 3;
+    t += Math.min(1.6, Math.max(-1.1, ((state.co2 || 0) - base) * 0.045));
+    t += (p.coreNow || 0) * 0.4;
+    t -= ((p.albedoNow || 30) - 30) * 0.07;
+    if (cell.volcano > 0.4) t += 0.35;
     return t;
+  }
+
+  function visualHeat(state) {
+    var p = ensurePlanet(state);
+    var base = state.co2Base != null ? state.co2Base : 3;
+    var co2d = (state.co2 || 0) - base;
+    var feelD = state.feel != null && state.startT != null ? state.feel - state.startT : 0;
+    return clamp(
+      (p.coreNow || 0) * 0.11 + co2d * 0.02 + feelD * 0.08 + ((30 - (p.albedoNow || 30)) * 0.01),
+      -1,
+      1
+    );
   }
 
   function feelBand(state) {
@@ -532,8 +614,8 @@
     var name = "Cozy";
     if (t < 4) name = "Ice Age";
     else if (t < 8) name = "Cool";
-    else if (t < 16) name = "Cozy";
-    else if (t < 21) name = "Hot";
+    else if (t < 18) name = "Cozy";
+    else if (t < 27) name = "Hot";
     else name = "Scorching";
     return { temp: t, name: name };
   }
@@ -569,6 +651,8 @@
         if (t < 1) rain *= 0.7;
         if (cell.sea) rain *= 0.55;
         rain *= ensurePlanet(state).rainNow || 1;
+        if (state.dryMul) rain *= state.dryMul;
+        if (state.wetSouth) rain *= 1 + (r / (ROWS - 1)) * state.wetSouth;
         rain = Math.max(0, rain);
         climR[i] = rain;
         air = Math.max(6, air - rain * 0.18);
@@ -1157,8 +1241,8 @@
       p.coreTold = 1;
       var hotter = p.coreNow > beforeCore;
       logs.push(hotter
-        ? "Core heat reached the crust. The climate is warming from inside the planet, and volcanoes glow hotter. It took more than one season because rock and air change slowly."
-        : "The core is cooling. The climate eases down and ice can spread. The meter moves with the air, not the moment you touched the control.");
+        ? "Core heat reached the crust. The climate warms a little from inside the planet, volcanoes glow hotter, and the ice on the globe pulls back. Rock and air take more than one season."
+        : "The core is cooling. Ice can spread on the globe and the air eases down. The meter follows the air, not the moment you touched the control.");
       state.cells.forEach(function (cell) {
         if (cell.volcano > 0.2) cell.volcano = hotter ? 1 : Math.max(0.35, cell.volcano - 0.2);
       });
@@ -1172,8 +1256,8 @@
     if (Math.abs(state.co2 - beforeCo2) > 1.5 && !p.co2Told) {
       p.co2Told = 1;
       logs.push(state.co2 > beforeCo2
-        ? "Carbon dioxide has mixed through the air. It holds heat, so the climate meter climbs. One mine scoop is much smaller than this planet-wide change."
-        : "Carbon dioxide dropped. Less of the Sun's heat stays in the air, so the climate meter eases down.");
+        ? "Carbon dioxide has mixed through the air. It holds some heat, so the globe's air turns warmer and the ice shrinks. The climate meter moves a little, not all at once. One mine scoop is smaller than this."
+        : "Carbon dioxide dropped. The air on the globe cools a little and ice can grow. The meter eases down over later seasons.");
     }
     if (Math.abs(p.rainNow - beforeRain) > 0.08 && !p.rainTold) {
       p.rainTold = 1;
@@ -1222,7 +1306,7 @@
       if (!state.cells[u].sea && !seen[u]) state.cells[u].flood = false;
     }
     if (flooded) {
-      logs.push("Sea level crept inland and flooded " + flooded + " low place" + (flooded === 1 ? "" : "s") + ". Coasts change slowly. One rainy afternoon does not do this. The ocean did.");
+      logs.push("Sea level crept inland and flooded " + flooded + " low place" + (flooded === 1 ? "" : "s") + ". On the globe, low coasts disappear under the ocean. One rainy afternoon does not do this.");
     }
   }
 
@@ -1284,7 +1368,7 @@
     rollWeather(state);
     refresh(state);
     var mean = meanTemp(state);
-    state.feel = state.feel == null ? mean : state.feel * 0.5 + mean * 0.5;
+    state.feel = state.feel == null ? mean : state.feel * 0.8 + mean * 0.2;
     var weatherLine = state.weather.name + ".";
     if (state.year === 1) weatherLine += teach(state, "weather") + " The biome map follows climate, the long pattern, so one storm does not repaint a desert into a forest.";
     logs.push(weatherLine);
@@ -1459,15 +1543,15 @@
     var roles = countLife(state);
     var pasturesNow = countUse(state, "pasture");
     var plantK = Math.max(180, npp.land * 3.35);
-    if (pasturesNow >= 4) plantK *= Math.max(0.35, 1 - (pasturesNow - 3) * 0.12);
-    state.plants = Math.max(40, state.plants + state.plants * 0.28 * (1 - state.plants / plantK));
-    var herbK = Math.max(12, state.plants * 0.078);
-    if (pasturesNow >= 5) herbK *= 0.42;
+    if (pasturesNow >= 4) plantK *= Math.max(0.45, 1 - (pasturesNow - 3) * 0.1);
+    state.plants = settle(state.plants, plantK, 0.2);
+    var herbK = Math.max(8, state.plants * 0.078);
+    if (pasturesNow >= 5) herbK *= 0.55;
     var beforeH = state.herb;
-    state.herb = Math.max(0, state.herb + state.herb * 0.2 * (1 - state.herb / herbK));
+    state.herb = settle(state.herb, herbK, 0.16);
     if (pasturesNow >= 5 && state.year > 1) {
-      state.plants = Math.max(30, state.plants * 0.9);
-      if (state.herb > herbK * 1.05) state.herb *= 0.62;
+      state.plants = Math.max(30, state.plants * 0.94);
+      state.herb = Math.max(2, state.herb * 0.9);
     }
     var gained = Math.min(state.plants * 0.08, state.herb * 0.4) * 0.1;
     if (beforeH - state.herb > Math.max(6, beforeH * 0.25)) {
@@ -1475,7 +1559,7 @@
     }
     var carnK = Math.max(2, state.herb * 0.075 + roles.carnivore);
     var beforeC = state.carn;
-    state.carn = Math.max(0, state.carn + state.carn * 0.18 * (1 - state.carn / carnK));
+    state.carn = settle(state.carn, carnK, 0.14);
     if (beforeC - state.carn > Math.max(2, beforeC * 0.3) && beforeH - state.herb > 4) {
       logs.push("Carnivores fell from about " + r1(beforeC) + " to " + r1(state.carn) + " a season after their prey thinned. Energy reaches them only through the animals they eat.");
     }
@@ -1483,7 +1567,7 @@
     var fishK = Math.max(4, npp.water * 0.5);
     if (dams) fishK *= Math.max(0.35, 1 - dams * 0.2);
     var beforeF = state.fish;
-    state.fish = Math.max(0, state.fish + state.fish * 0.16 * (1 - state.fish / fishK));
+    state.fish = settle(state.fish, fishK, 0.14);
     if (dams && beforeF - state.fish > 2) {
       logs.push("Fish fell from about " + r1(beforeF) + " to " + r1(state.fish) + ". Dams block paths fish inherit: many swim upstream to lay eggs. Fewer young means fewer fish later, not always the same season.");
     }
@@ -1522,6 +1606,14 @@
     if (state.year % 4 === 1 || beforeH - state.herb > 6) {
       logs.push("Energy: sunlight built about " + r1(npp.land) + " producer units on land and " + r1(npp.water) + " in water. Herbivores took in about " + r1(gained) + " of that (close to a tenth of what they ate). Decomposers returned about " + r1(state.decomp) + " nutrient units toward the soil." + teach(state, "producer") + teach(state, "decomposer"));
     }
+  }
+
+  function settle(pop, k, rate) {
+    k = Math.max(2, k);
+    var raw = pop + pop * rate * (1 - pop / k);
+    var next = Math.max(pop * 0.78, Math.min(pop * 1.14, raw));
+    if (next < k * 0.7) next = Math.min(k * 0.7, next + k * 0.05);
+    return Math.max(1.5, next);
   }
 
   function scoopCell(state, cell) {
@@ -2272,5 +2364,7 @@
     lfName: lfName,
     feelBand: feelBand,
     ensurePlanet: ensurePlanet,
+    visualHeat: visualHeat,
+    setFocus: setFocus,
   };
 });

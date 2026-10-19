@@ -116,8 +116,8 @@
     var ctx = off.getContext("2d");
     ctx.setTransform(m.dpr, 0, 0, m.dpr, 0, 0);
     var sky = ctx.createLinearGradient(0, 0, 0, m.h);
-    sky.addColorStop(0, "#8fd4ef");
-    sky.addColorStop(1, "#d7f0c8");
+    sky.addColorStop(0, "#163024");
+    sky.addColorStop(1, "#1d3328");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, m.w, m.h);
     drawGround(ctx, pack, m);

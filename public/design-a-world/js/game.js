@@ -119,12 +119,30 @@
     var box = $("scenarios");
     box.innerHTML = "";
     WorldSim.SCENARIOS.forEach(function (sc) {
-      var b = document.createElement("button");
-      b.type = "button";
+      var b = document.createElement(sc.id === "earth" ? "div" : "button");
+      if (b.tagName === "BUTTON") b.type = "button";
       b.className = "card";
       b.dataset.scenario = sc.id;
       b.innerHTML = "<b>" + esc(sc.name) + "</b><span>" + esc(sc.blurb) + "</span><small>" + esc(sc.goals[0]) + "</small>";
-      b.addEventListener("click", function () { begin(sc.id); });
+      if (sc.id === "earth" && window.WorldEarth) {
+        var regions = document.createElement("span");
+        regions.className = "region-picks";
+        WorldEarth.REGIONS.forEach(function (region) {
+          var r = document.createElement("button");
+          r.type = "button";
+          r.className = "region-pick";
+          r.textContent = region.name;
+          r.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            begin("earth", region.id);
+          });
+          regions.appendChild(r);
+        });
+        b.appendChild(regions);
+        b.addEventListener("click", function () { begin("earth", "plains"); });
+      } else {
+        b.addEventListener("click", function () { begin(sc.id); });
+      }
       box.appendChild(b);
     });
   }
@@ -313,14 +331,19 @@
     });
   }
 
-  function begin(id) {
+  function begin(id, focus) {
     var opts = { name: $("student-name").value };
     var seedRaw = $("seed").value.trim();
     if (seedRaw) opts.seed = Number(seedRaw);
+    if (focus) opts.focus = focus;
     S = WorldSim.create(id, opts);
     selected = (S.nations[0] && S.nations[0].capital) || { c: 4, r: 6 };
     openApp();
-    say("I'm Nimbus. This is " + scenario().name + ". " + scenario().blurb);
+    var place = S.focus && window.WorldEarth ? WorldEarth.regionById(S.focus).name : scenario().name;
+    say("I'm Nimbus. This is " + place + ". " + scenario().blurb);
+    if (S.scenario === "earth" && window.WorldGlobe && WorldGlobe.faceLonLat) {
+      WorldGlobe.faceLonLat(-55, 28, false);
+    }
   }
 
   function openApp() {
@@ -441,9 +464,10 @@
     $("co2").dataset.band = band.name;
     if ($("feel-read")) $("feel-read").textContent = band.temp.toFixed(1) + "°";
     if ($("thermo-fill")) {
-      var pct = Math.max(6, Math.min(94, (band.temp / 24) * 100));
+      var pct = Math.max(6, Math.min(94, ((band.temp + 8) / 40) * 100));
       $("thermo-fill").style.left = pct + "%";
     }
+    paintFocus();
     paintInspector();
     paintGoals();
     paintNations();
@@ -452,6 +476,38 @@
     paintGlobe();
     WorldDraw.poke();
     if (window.WorldGlobe) WorldGlobe.poke();
+  }
+
+  function paintFocus() {
+    var wrap = $("focus-wrap");
+    var sel = $("focus-select");
+    if (!wrap || !sel) return;
+    var earth = S.scenario === "earth" && window.WorldEarth;
+    wrap.hidden = !earth;
+    if (!earth) return;
+    if (sel.dataset.ready !== "1") {
+      sel.innerHTML = "";
+      WorldEarth.REGIONS.forEach(function (region) {
+        var o = document.createElement("option");
+        o.value = region.id;
+        o.textContent = region.name;
+        sel.appendChild(o);
+      });
+      sel.dataset.ready = "1";
+      sel.addEventListener("change", function () {
+        if (!S) return;
+        var res = WorldSim.setFocus(S, sel.value);
+        selected = (S.nations[0] && S.nations[0].capital) || { c: 4, r: 6 };
+        toast(res.msg || "Zoomed.");
+        say(res.msg || "");
+        renderAll();
+        save();
+        if (res.spec && window.WorldGlobe && WorldGlobe.faceLonLat) {
+          WorldGlobe.faceLonLat((res.spec.lon + res.spec.lon2) / 2, (res.spec.lat + res.spec.lat2) / 2, false);
+        }
+      });
+    }
+    if (sel.value !== S.focus) sel.value = S.focus;
   }
 
   function setMapMode(mode) {
@@ -683,7 +739,7 @@
       { key: "herb", color: "#e07a3d", name: "Grazers" },
       { key: "carn", color: "#c4473a", name: "Hunters" },
       { key: "fish", color: "#1b6f8a", name: "Fish" },
-      { key: "people", color: "#1d3140", name: "People" }
+      { key: "people", color: "#9fd6ff", name: "People" }
     ], chartAnim);
     drawChart($("chart-res"), [
       { key: "timber", color: "#2f8f4e", name: "Wood" },
@@ -698,7 +754,7 @@
   function drawChart(canvas, series, anim) {
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     var w = canvas.clientWidth || 360;
-    var h = 200;
+    var h = 148;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.floor(h * dpr);
     var ctx = canvas.getContext("2d");
@@ -706,7 +762,7 @@
     ctx.fillStyle = "#0c1424";
     ctx.fillRect(0, 0, w, h);
     var rows = S.history || [];
-    var left = 8, right = 8, top = 8, bottom = 36;
+    var left = 8, right = 8, top = 8, bottom = 44;
     ctx.strokeStyle = "rgba(180,210,255,0.35)";
     ctx.beginPath();
     ctx.moveTo(left, top);
@@ -729,13 +785,15 @@
     });
     ctx.font = "12px sans-serif";
     var lx = left;
+    var ly = h - 26;
     series.forEach(function (s) {
       var last = rows.length ? Math.round(rows[rows.length - 1][s.key] || 0) : 0;
       var label = s.name + " " + last;
-      if (lx > w - 70) return;
+      var wide = ctx.measureText(label).width + 12;
+      if (lx + wide > w - 8) { lx = left; ly = h - 10; }
       ctx.fillStyle = s.color;
-      ctx.fillText(label, lx, h - 12);
-      lx += ctx.measureText(label).width + 10;
+      ctx.fillText(label, lx, ly);
+      lx += wide;
     });
   }
 
@@ -827,4 +885,9 @@
   }
 
   document.addEventListener("DOMContentLoaded", boot);
+  window.DesignWorld = {
+    get state() { return S; },
+    render: function () { if (S) renderAll(); },
+    showScience: function () { if (S && S.pending) openScience(); }
+  };
 })();
