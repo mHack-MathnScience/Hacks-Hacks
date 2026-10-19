@@ -10,6 +10,7 @@
   var mapMode = "globe";
   var lowGfx = false;
   var choiceId = null;
+  var activeTab = "planet";
   var mismatch = null;
   var toastTimer = 0;
   var prevMeters = null;
@@ -136,42 +137,45 @@
   function renderTools() {
     var box = $("tool-list");
     box.innerHTML = "";
+    var tabs = document.createElement("div");
+    tabs.className = "tabs";
+    tabs.setAttribute("role", "tablist");
+    tabs.setAttribute("aria-label", "Tool categories");
+    var panel = document.createElement("div");
+    panel.className = "drawer-body tab-panel";
+    panel.id = "tool-panel";
     GROUPS.forEach(function (group) {
-      var wrap = document.createElement("div");
-      wrap.className = "drawer";
-      var head = document.createElement("button");
-      head.type = "button";
-      head.className = "drawer-head";
-      head.setAttribute("aria-expanded", group.open ? "true" : "false");
-      head.innerHTML = "<span>" + esc(group.title) + "</span><span>" + (group.open ? "–" : "+") + "</span>";
-      var body = document.createElement("div");
-      body.className = "drawer-body";
-      body.hidden = !group.open;
-      head.addEventListener("click", function () {
-        group.open = !group.open;
-        body.hidden = !group.open;
-        head.setAttribute("aria-expanded", group.open ? "true" : "false");
-        head.lastChild.textContent = group.open ? "–" : "+";
+      var tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "tab";
+      tab.setAttribute("role", "tab");
+      tab.dataset.tab = group.id;
+      tab.textContent = group.title;
+      tab.setAttribute("aria-selected", group.id === activeTab ? "true" : "false");
+      tab.addEventListener("click", function () {
+        activeTab = group.id;
+        renderTools();
       });
-      group.items.forEach(function (item) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.className = "tool";
-        b.title = item.hint;
-        b.innerHTML = iconSvg(item.icon) + "<span>" + esc(item.label) + "</span>";
-        if (item.planet) {
-          b.addEventListener("click", function () { usePlanet(item.planet, item.dir); });
-        } else {
-          b.dataset.tool = item.id;
-          b.addEventListener("click", function () { setTool(item.id); });
-        }
-        body.appendChild(b);
-      });
-      wrap.appendChild(head);
-      wrap.appendChild(body);
-      box.appendChild(wrap);
+      tabs.appendChild(tab);
     });
-    setTool("look");
+    var group = GROUPS.filter(function (g) { return g.id === activeTab; })[0] || GROUPS[0];
+    group.items.forEach(function (item) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tool";
+      b.title = item.hint;
+      b.innerHTML = iconSvg(item.icon) + "<span>" + esc(item.label) + "</span>";
+      if (item.planet) {
+        b.addEventListener("click", function () { usePlanet(item.planet, item.dir); });
+      } else {
+        b.dataset.tool = item.id;
+        b.addEventListener("click", function () { setTool(item.id); });
+      }
+      panel.appendChild(b);
+    });
+    box.appendChild(tabs);
+    box.appendChild(panel);
+    setTool(tool || "look");
   }
 
   function usePlanet(kind, dir) {

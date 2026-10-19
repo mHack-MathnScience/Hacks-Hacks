@@ -520,9 +520,9 @@
     var t = latT - cell.e * 3.6;
     t = t * (1 - 0.42 * wf) + 17 * 0.42 * wf;
     t += state.tempShift || 0;
-    t += Math.min(4.2, (state.co2 || 0) * 0.06);
+    t += Math.min(4.2, (state.co2 || 0) * 0.1);
     t += p.coreNow || 0;
-    t -= ((p.albedoNow || 30) - 30) * 0.12;
+    t -= ((p.albedoNow || 30) - 30) * 0.18;
     if (cell.volcano > 0.4) t += 0.6;
     return t;
   }
@@ -1094,38 +1094,42 @@
     var dir = action.dir > 0 ? 1 : -1;
     var msg = "";
     if (kind === "core") {
-      p.core = clamp(p.core + dir * 1.2, -4, 6);
+      p.core = clamp(p.core + dir * 2.4, -5, 6);
+      p.coreTold = 0;
       msg = dir > 0
-        ? "Core heat is rising. Volcanoes and a warmer climate show up over the next seasons, not this instant."
-        : "Core heat is cooling. The climate eases toward cooler weather over several seasons.";
+        ? "Core heat is rising. In two or three seasons the air warms and volcanoes glow brighter. Not this instant."
+        : "Core heat is falling. In two or three seasons the air cools and the ice can grow.";
     } else if (kind === "co2") {
-      p.co2Queue += dir * 4;
+      p.co2Queue += dir * 12;
+      p.co2Told = 0;
       msg = dir > 0
-        ? "Carbon dioxide is mixing into the air. Heat builds slowly. One season will not show the whole change."
-        : "Carbon dioxide is coming down. Cooling, if it comes, arrives over several seasons.";
+        ? "Carbon dioxide is mixing in. The climate meter moves over the next two or three seasons."
+        : "Carbon dioxide is coming down. Cooling shows up over the next two or three seasons.";
     } else if (kind === "o2") {
-      p.o2 = clamp(p.o2 + dir * 1.5, 14, 28);
+      p.o2 = clamp(p.o2 + dir * 2, 14, 28);
       msg = dir > 0
         ? "Oxygen is rising. Plants can support a little more life once the air mixes. Animals still need plants first."
         : "Oxygen is falling. Producers make a little less food after the air has time to change.";
     } else if (kind === "albedo") {
-      p.albedo = clamp(p.albedo + dir * 6, 10, 70);
+      p.albedo = clamp(p.albedo + dir * 10, 8, 70);
+      p.albedoTold = 0;
       msg = dir > 0
-        ? "The planet is brighter, so it bounces more sunlight. Albedo is that bounce. Cooling comes after a delay."
-        : "The planet is darker, so it keeps more sunlight. Warming comes after a delay.";
+        ? "The planet is brighter. Albedo means it bounces more sunlight. Look for cooling and more ice in two or three seasons."
+        : "The planet is darker, so it keeps more sunlight. Look for a warmer tint in two or three seasons.";
     } else if (kind === "rain") {
-      p.rainBias = clamp(p.rainBias + dir * 0.18, 0.45, 1.85);
+      p.rainBias = clamp(p.rainBias + dir * 0.4, 0.4, 2);
+      p.rainTold = 0;
       msg = dir > 0
-        ? "More clouds and rain are on the way. Rivers and wetlands respond over the next seasons."
-        : "Fewer clouds. Dry places can spread after the rain pattern settles.";
+        ? "Thicker clouds are on the way. In two or three seasons you should see more cloud and more rain."
+        : "Clouds are thinning. Drier land can spread over the next two or three seasons.";
     } else if (kind === "uplift") {
       p.uplift = clamp(p.uplift + 1, 0, 4);
-      msg = "Tectonic uplift is queued. Ridges and a volcano rise next season, then rain and biomes shift.";
+      msg = "Tectonic uplift is queued. Next season a ridge rises and a volcano glows.";
     } else if (kind === "sea") {
-      p.sea = clamp((p.sea || 0) + dir * 0.7, 0, 2.4);
+      p.sea = clamp((p.sea || 0) + dir * 1.35, 0, 2.4);
       msg = dir > 0
-        ? "Sea level will creep up. Low coasts flood after a season or two, not the moment you press the button."
-        : "Sea level will ease down. Flooded coasts can dry once the ocean retreats.";
+        ? "Sea level is rising. Low coasts flood in about two or three seasons, not the moment you press the button."
+        : "Sea level is falling. Flooded coasts can dry once the ocean pulls back.";
     } else return { ok: false, msg: "That planet control is not ready." };
     remember(state, "planet", -1, -1, kind + " " + dir);
     return { ok: true, msg: msg };
@@ -1133,16 +1137,49 @@
 
   function planetAdvance(state, logs) {
     var p = ensurePlanet(state);
-    p.coreNow = p.coreNow + (p.core - p.coreNow) * 0.35;
-    p.albedoNow = p.albedoNow + (p.albedo - p.albedoNow) * 0.35;
-    p.rainNow = p.rainNow + (p.rainBias - p.rainNow) * 0.35;
-    p.o2Now = p.o2Now + (p.o2 - p.o2Now) * 0.35;
-    p.seaNow = p.seaNow + (p.sea - p.seaNow) * 0.35;
+    var beforeCore = p.coreNow;
+    var beforeAlbedo = p.albedoNow;
+    var beforeRain = p.rainNow;
+    var beforeCo2 = state.co2;
+    var k = 0.62;
+    p.coreNow = p.coreNow + (p.core - p.coreNow) * k;
+    p.albedoNow = p.albedoNow + (p.albedo - p.albedoNow) * k;
+    p.rainNow = p.rainNow + (p.rainBias - p.rainNow) * k;
+    p.o2Now = p.o2Now + (p.o2 - p.o2Now) * k;
+    p.seaNow = p.seaNow + (p.sea - p.seaNow) * k;
     if (p.co2Queue) {
-      var add = p.co2Queue * 0.35;
+      var add = p.co2Queue * k;
       state.co2 = Math.max(0, state.co2 + add);
       p.co2Queue -= add;
-      if (Math.abs(p.co2Queue) < 0.04) p.co2Queue = 0;
+      if (Math.abs(p.co2Queue) < 0.05) p.co2Queue = 0;
+    }
+    if (Math.abs(p.coreNow - beforeCore) > 0.35 && !p.coreTold) {
+      p.coreTold = 1;
+      var hotter = p.coreNow > beforeCore;
+      logs.push(hotter
+        ? "Core heat reached the crust. The climate is warming from inside the planet, and volcanoes glow hotter. It took more than one season because rock and air change slowly."
+        : "The core is cooling. The climate eases down and ice can spread. The meter moves with the air, not the moment you touched the control.");
+      state.cells.forEach(function (cell) {
+        if (cell.volcano > 0.2) cell.volcano = hotter ? 1 : Math.max(0.35, cell.volcano - 0.2);
+      });
+    }
+    if (Math.abs(p.albedoNow - beforeAlbedo) > 1.2 && !p.albedoTold) {
+      p.albedoTold = 1;
+      logs.push(p.albedoNow > beforeAlbedo
+        ? "Albedo went up. The planet bounces more sunlight, so it cools and the ice can grow. Albedo is that bounce."
+        : "Albedo went down. The planet keeps more sunlight, so the land takes on a warmer tint.");
+    }
+    if (Math.abs(state.co2 - beforeCo2) > 1.5 && !p.co2Told) {
+      p.co2Told = 1;
+      logs.push(state.co2 > beforeCo2
+        ? "Carbon dioxide has mixed through the air. It holds heat, so the climate meter climbs. One mine scoop is much smaller than this planet-wide change."
+        : "Carbon dioxide dropped. Less of the Sun's heat stays in the air, so the climate meter eases down.");
+    }
+    if (Math.abs(p.rainNow - beforeRain) > 0.08 && !p.rainTold) {
+      p.rainTold = 1;
+      logs.push(p.rainNow > beforeRain
+        ? "The cloud deck thickened. More rain reaches the land. Rivers and wetlands answer after the wet air has had a season or two to settle."
+        : "The cloud deck thinned. Less rain reaches the land, so dry biomes can spread.");
     }
     applySea(state, logs);
     if (p.uplift > 0.4) {
@@ -1247,7 +1284,7 @@
     rollWeather(state);
     refresh(state);
     var mean = meanTemp(state);
-    state.feel = state.feel == null ? mean : state.feel * 0.72 + mean * 0.28;
+    state.feel = state.feel == null ? mean : state.feel * 0.5 + mean * 0.5;
     var weatherLine = state.weather.name + ".";
     if (state.year === 1) weatherLine += teach(state, "weather") + " The biome map follows climate, the long pattern, so one storm does not repaint a desert into a forest.";
     logs.push(weatherLine);

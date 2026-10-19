@@ -61,7 +61,7 @@
             <path d="M31 40 q5 4 10 0" fill="none" stroke="#1d3140" stroke-width="1.5" stroke-linecap="round"/>
             <rect x="46" y="44" width="14" height="10" rx="2" fill="#f2b705"/>
           </svg>
-          <p id="guide-say">I'm Nimbus. Drag the globe. Planet tools change the climate slowly.</p>
+          <p id="guide-say">I'm Nimbus. Drag the globe. Planet tools show up over the next two or three seasons.</p>
         </aside>
       </aside>
       <section class="stage">
@@ -78,6 +78,48 @@
           <canvas id="world" hidden tabindex="0" aria-label="Region map. Click a place to use the selected tool."></canvas>
         </div>
         <p id="readout" class="readout" aria-live="polite">Choose a tool, then a place on the region map.</p>
+        <div id="science" class="field-card" hidden>
+          <div class="sheet" role="dialog" aria-modal="false" aria-labelledby="science-title">
+            <p class="standard" id="science-standard"></p>
+            <h2 id="science-title"></h2>
+            <p id="science-prompt"></p>
+            <div id="science-choices" class="choices"></div>
+            <label>Your sentence
+              <textarea id="science-reason" rows="2" placeholder="Say why in your own words."></textarea>
+            </label>
+            <div class="actions">
+              <button type="button" class="ghost" id="science-skip">Skip for now</button>
+              <button type="button" class="primary" id="science-save">Keep this in the notebook</button>
+            </div>
+            <p id="science-note" class="note" hidden></p>
+          </div>
+        </div>
+        <div id="mismatch" class="field-card" hidden>
+          <div class="sheet" role="dialog" aria-labelledby="mismatch-title">
+            <h2 id="mismatch-title">This place may not fit</h2>
+            <p id="mismatch-text"></p>
+            <label>Your reason
+              <textarea id="mismatch-reason" rows="2"></textarea>
+            </label>
+            <div class="actions">
+              <button type="button" class="ghost" id="mismatch-move">Leave it off the map</button>
+              <button type="button" class="primary" id="mismatch-keep">Keep it and save my reason</button>
+            </div>
+          </div>
+        </div>
+        <div id="warn" class="field-card" hidden>
+          <div class="sheet" role="dialog" aria-labelledby="warn-title">
+            <h2 id="warn-title">A gentle flag</h2>
+            <p id="warn-text"></p>
+            <label>Your reason
+              <textarea id="warn-reason" rows="2"></textarea>
+            </label>
+            <div class="actions">
+              <button type="button" class="ghost" id="warn-undo">Undo</button>
+              <button type="button" class="primary" id="warn-keep">Keep it and save my reason</button>
+            </div>
+          </div>
+        </div>
       </section>
       <aside class="side" aria-label="Season report">
         <h2 id="scenario-name">World</h2>
@@ -122,51 +164,6 @@
         </div>
         <button type="button" class="ghost wide" id="run-four">Let 4 seasons pass</button>
       </aside>
-    </div>
-  </div>
-
-  <div id="science" class="field-card" hidden>
-    <div class="sheet" role="dialog" aria-modal="false" aria-labelledby="science-title">
-      <p class="standard" id="science-standard"></p>
-      <h2 id="science-title"></h2>
-      <p id="science-prompt"></p>
-      <div id="science-choices" class="choices"></div>
-      <label>Your sentence
-        <textarea id="science-reason" rows="2" placeholder="Say why in your own words."></textarea>
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost" id="science-skip">Skip for now</button>
-        <button type="button" class="primary" id="science-save">Keep this in the notebook</button>
-      </div>
-      <p id="science-note" class="note" hidden></p>
-    </div>
-  </div>
-
-  <div id="mismatch" class="field-card" hidden>
-    <div class="sheet" role="dialog" aria-labelledby="mismatch-title">
-      <h2 id="mismatch-title">This place may not fit</h2>
-      <p id="mismatch-text"></p>
-      <label>Your reason
-        <textarea id="mismatch-reason" rows="2"></textarea>
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost" id="mismatch-move">Leave it off the map</button>
-        <button type="button" class="primary" id="mismatch-keep">Keep it and save my reason</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="warn" class="field-card" hidden>
-    <div class="sheet" role="dialog" aria-labelledby="warn-title">
-      <h2 id="warn-title">A gentle flag</h2>
-      <p id="warn-text"></p>
-      <label>Your reason
-        <textarea id="warn-reason" rows="2"></textarea>
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost" id="warn-undo">Undo</button>
-        <button type="button" class="primary" id="warn-keep">Keep it and save my reason</button>
-      </div>
     </div>
   </div>
 
